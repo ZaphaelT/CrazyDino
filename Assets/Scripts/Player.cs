@@ -5,10 +5,28 @@ public class Player : NetworkBehaviour
 {
     private NetworkCharacterController _cc;
 
-    // Upewniamy siê, ¿e komponent jest pobrany przy spawn (bezpieczniej ni¿ Awake jeœli coœ modyfikujesz)
+    [SerializeField] private Camera playerCamera; // opcjonalnie przypisz w prefabie lub znajdzie child
+
+    // Upewniamy siê, ¿e komponent jest pobrany przy spawn
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
+
+        // ZnajdŸ kamerê jeœli nie przypisano przez Inspector
+        if (playerCamera == null)
+            playerCamera = GetComponentInChildren<Camera>(true);
+
+        // Je¿eli mamy kamerê w prefabu - aktywuj j¹ tylko dla lokalnego gracza
+        if (playerCamera != null)
+        {
+            bool isLocal = Object.HasInputAuthority;
+            playerCamera.gameObject.SetActive(isLocal);
+
+            // Wy³¹cz/w³¹cz AudioListener (unikaj 2 AudioListenerów)
+            var audio = playerCamera.GetComponent<AudioListener>();
+            if (audio != null)
+                audio.enabled = isLocal;
+        }
 
         Debug.Log(
             $"Player Spawned: ObjId={Object.Id} Name={gameObject.name} HasStateAuthority={Object.HasStateAuthority} " +
