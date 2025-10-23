@@ -76,25 +76,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             }
         }
 
-        // Fallback do starego systemu, gdy brak Input System lub akcja pusta
-        if (move == Vector2.zero)
-        {
-            if (Keyboard.current != null)
-            {
-                if (Keyboard.current.wKey.isPressed) move.y += 1f;
-                if (Keyboard.current.sKey.isPressed) move.y -= 1f;
-                if (Keyboard.current.dKey.isPressed) move.x += 1f;
-                if (Keyboard.current.aKey.isPressed) move.x -= 1f;
-            }
-            else
-            {
-                if (Input.GetKey(KeyCode.W)) move.y += 1f;
-                if (Input.GetKey(KeyCode.S)) move.y -= 1f;
-                if (Input.GetKey(KeyCode.D)) move.x += 1f;
-                if (Input.GetKey(KeyCode.A)) move.x -= 1f;
-            }
-        }
-
         // Konwersja do Vector3 (z = forward)
         data.direction = new Vector3(move.x, 0f, move.y);
 
