@@ -20687,7 +20687,7 @@ MonoBehaviour:
   jumpImpulse: 8
   acceleration: 10
   braking: 10
-  maxSpeed: 2
+  maxSpeed: 20
   rotationSpeed: 15
 --- !u!114 &2730856879295555910
 MonoBehaviour:

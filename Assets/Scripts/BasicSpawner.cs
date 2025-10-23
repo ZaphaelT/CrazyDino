@@ -4,9 +4,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    private InputSystem_Actions _controls;
+
     public void OnConnectedToServer(NetworkRunner runner)
     {
         Debug.Log("OnConnectedToServer");
@@ -20,7 +23,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
         Debug.Log("OnConnectRequest");
-        // Jeœli trzeba zaakceptowaæ rêcznie, zrób to tutaj.
     }
 
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data)
@@ -38,21 +40,63 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         Debug.Log("OnHostMigration");
     }
 
+    private void OnEnable()
+    {
+        if (_controls == null)
+            _controls = new InputSystem_Actions();
+
+        // W³¹czamy mapê Player (aktywnuje wszystkie akcje w tej mapie)
+        _controls.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        if (_controls != null)
+            _controls.Player.Disable();
+    }
+
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
 
-        if (Input.GetKey(KeyCode.W))
-            data.direction += Vector3.forward;
+        Vector2 move = Vector2.zero;
 
-        if (Input.GetKey(KeyCode.S))
-            data.direction += Vector3.back;
+        // Preferuj nowy Input System (wygenerowan¹ klasê)
+        if (_controls != null)
+        {
+            // Odczytaj Vector2 (x = right, y = up/forward) z akcji Player.Move
+            try
+            {
+                move = _controls.Player.Move.ReadValue<Vector2>();
+            }
+            catch (Exception)
+            {
+                // jeœli akcja nie istnieje lub jest nieprawid³owa — fallback poni¿ej
+                move = Vector2.zero;
+            }
+        }
 
-        if (Input.GetKey(KeyCode.A))
-            data.direction += Vector3.left;
+        // Fallback do starego systemu, gdy brak Input System lub akcja pusta
+        if (move == Vector2.zero)
+        {
+            if (Keyboard.current != null)
+            {
+                if (Keyboard.current.wKey.isPressed) move.y += 1f;
+                if (Keyboard.current.sKey.isPressed) move.y -= 1f;
+                if (Keyboard.current.dKey.isPressed) move.x += 1f;
+                if (Keyboard.current.aKey.isPressed) move.x -= 1f;
+            }
+            else
+            {
+                if (Input.GetKey(KeyCode.W)) move.y += 1f;
+                if (Input.GetKey(KeyCode.S)) move.y -= 1f;
+                if (Input.GetKey(KeyCode.D)) move.x += 1f;
+                if (Input.GetKey(KeyCode.A)) move.x -= 1f;
+            }
+        }
 
-        if (Input.GetKey(KeyCode.D))
-            data.direction += Vector3.right;
+        // Konwersja do Vector3 (z = forward)
+        data.direction = new Vector3(move.x, 0f, move.y);
 
         // DEBUG - poka¿ kto wysy³a input i co
         Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
@@ -63,7 +107,6 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
     {
         Debug.Log($"OnInputMissing: player={player}");
-        // noop - mo¿na podstawiæ domyœlny input jeœli chcesz
     }
 
     public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
@@ -146,17 +189,10 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         Debug.Log("OnUserSimulationMessage");
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    void Start() { }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    void Update() { }
+
     private NetworkRunner _runner;
 
     async void StartGame(GameMode mode)
@@ -187,6 +223,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
     }
+
     private void OnGUI()
     {
         if (_runner == null)
