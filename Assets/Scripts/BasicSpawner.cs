@@ -61,26 +61,22 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
         Vector2 move = Vector2.zero;
 
-        // Preferuj nowy Input System (wygenerowan¹ klasê)
         if (_controls != null)
         {
-            // Odczytaj Vector2 (x = right, y = up/forward) z akcji Player.Move
             try
             {
                 move = _controls.Player.Move.ReadValue<Vector2>();
             }
             catch (Exception)
             {
-                // jeœli akcja nie istnieje lub jest nieprawid³owa — fallback poni¿ej
                 move = Vector2.zero;
             }
         }
 
-        // Konwersja do Vector3 (z = forward)
         data.direction = new Vector3(move.x, 0f, move.y);
 
         // DEBUG - poka¿ kto wysy³a input i co
-        Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
+        //Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
 
         input.Set(data);
     }
