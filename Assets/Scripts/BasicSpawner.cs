@@ -9,32 +9,33 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
     public void OnConnectedToServer(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnConnectedToServer");
     }
 
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
     {
-        throw new NotImplementedException();
+        Debug.LogWarning($"OnConnectFailed: reason={reason} remote={remoteAddress}");
     }
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnConnectRequest");
+        // Jeœli trzeba zaakceptowaæ rêcznie, zrób to tutaj.
     }
 
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnCustomAuthenticationResponse");
     }
 
     public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnDisconnectedFromServer: reason={reason}");
     }
 
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnHostMigration");
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input)
@@ -53,22 +54,26 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (Input.GetKey(KeyCode.D))
             data.direction += Vector3.right;
 
+        // DEBUG - poka¿ kto wysy³a input i co
+        Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
+
         input.Set(data);
     }
 
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnInputMissing: player={player}");
+        // noop - mo¿na podstawiæ domyœlny input jeœli chcesz
     }
 
     public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnObjectEnterAOI: obj={obj.Id} for player={player}");
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnObjectExitAOI: obj={obj.Id} for player={player}");
     }
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
@@ -76,13 +81,23 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
+        Debug.Log($"OnPlayerJoined called on runner.IsServer={runner.IsServer} RunnerLocalPlayer={runner.LocalPlayer} player={player}");
+
         if (runner.IsServer)
         {
-            // Create a unique position for the player
             Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            // Keep track of the player avatars for easy access
-            _spawnedCharacters.Add(player, networkPlayerObject);
+
+            if (networkPlayerObject != null)
+            {
+                networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
+                _spawnedCharacters.Add(player, networkPlayerObject);
+                Debug.Log($"Spawned: player={player} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+            }
+            else
+            {
+                Debug.LogError($"Spawn failed for player={player}");
+            }
         }
     }
 
@@ -92,42 +107,43 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             runner.Despawn(networkObject);
             _spawnedCharacters.Remove(player);
+            Debug.Log($"OnPlayerLeft: despawned player={player}");
         }
     }
 
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnReliableDataProgress: player={player} key={key} progress={progress}");
     }
 
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnReliableDataReceived: player={player} key={key} len={data.Count}");
     }
 
     public void OnSceneLoadDone(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnSceneLoadDone");
     }
 
     public void OnSceneLoadStart(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnSceneLoadStart");
     }
 
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnSessionListUpdated: count={sessionList?.Count}");
     }
 
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnShutdown: reason={shutdownReason}");
     }
 
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnUserSimulationMessage");
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

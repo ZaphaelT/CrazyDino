@@ -11,20 +11,22 @@ public class Player : NetworkBehaviour
         _cc = GetComponent<NetworkCharacterController>();
 
         Debug.Log(
-            $"Player Spawned: ObjectId={Object.Id} HasStateAuthority={Object.HasStateAuthority} " +
-            $"HasInputAuthority={Object.HasInputAuthority} InputAuthority={Object.InputAuthority} " +
-            $"RunnerLocalPlayer={Runner.LocalPlayer}"
+            $"Player Spawned: ObjId={Object.Id} Name={gameObject.name} HasStateAuthority={Object.HasStateAuthority} " +
+            $"HasInputAuthority={Object.HasInputAuthority} InputAuthority={Object.InputAuthority} RunnerLocalPlayer={Runner.LocalPlayer}"
         );
     }
 
     public override void FixedUpdateNetwork()
     {
-        // Ruch powinien aplikowaæ tylko instancja z state authority
+        // Ruch aplikuje tylko instancja z state authority
         if (!Object.HasStateAuthority)
             return;
 
         if (GetInput(out NetworkInputData data))
         {
+            // DEBUG: zobacz, jakie dane inputu trafi³y na obiekt i do kogo jest przypisany InputAuthority
+            Debug.Log($"[STATE] FixedUpdateNetwork: ObjId={Object.Id} Name={gameObject.name} InputAuthority={Object.InputAuthority} dir={data.direction}");
+
             // zabezpieczenie przed normalizacj¹ wektora zero
             if (data.direction.sqrMagnitude > 0f)
             {
