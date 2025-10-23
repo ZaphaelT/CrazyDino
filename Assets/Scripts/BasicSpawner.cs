@@ -161,9 +161,14 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     async void StartGame(GameMode mode)
     {
-        // Create the Fusion runner and let it know that we will be providing user input
+        // Create the Fusion runner
         _runner = gameObject.AddComponent<NetworkRunner>();
-        _runner.ProvideInput = true;
+
+        // Only provide input on client/host (not on a dedicated server instance)
+        _runner.ProvideInput = (mode == GameMode.Client || mode == GameMode.Host);
+
+        // Register this object as callbacks provider so Fusion calls your INetworkRunnerCallbacks
+        _runner.AddCallbacks(this);
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
@@ -173,7 +178,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             sceneInfo.AddSceneRef(scene, LoadSceneMode.Additive);
         }
 
-        // Start or join (depends on gamemode) a session with a specific name
+        // Start or join a session
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
