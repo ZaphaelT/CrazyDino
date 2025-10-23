@@ -4,6 +4,7 @@ using UnityEngine;
 public class Player : NetworkBehaviour
 {
     private NetworkCharacterController _cc;
+    private CharacterController _localController;
 
     [SerializeField] private Camera playerCamera; // opcjonalnie przypisz w prefabie lub znajdzie child
     private float _speed; // bêdzie zsynchronizowane z _cc.maxSpeed jeœli dostêpne
@@ -14,10 +15,14 @@ public class Player : NetworkBehaviour
     private Vector3 _cameraOffset;
     private Quaternion _cameraRotationOnDetach;
 
+    // predykcja klienta (lokalna wizualizacja)
+    private Vector3 _predictedHorizontalVelocity = Vector3.zero;
+
     // Upewniamy siê, ¿e komponent jest pobrany przy spawn
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
+        TryGetComponent(out _localController);
 
         // jeœli kontroler istnieje, u¿ywaj jego maxSpeed jako Ÿród³a prawdziwej prêdkoœci
         if (_cc != null)
@@ -87,38 +92,72 @@ public class Player : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        // Ruch aplikuje tylko instancja z state authority
-        if (!Object.HasStateAuthority)
-            return;
-
+        // NIE zwracamy wczeœniej — potrzebujemy obs³ugi zarówno dla state authority (autoratywne) jak i input authority (predykcja)
         // Domyœlnie brak prêdkoœci
-        Vector3 desiredVelocity = Vector3.zero;
+        Vector3 inputDirection = Vector3.zero;
 
         if (GetInput(out NetworkInputData data))
         {
             // DEBUG: zobacz, jakie dane inputu trafi³y na obiekt
-            Debug.Log($"[STATE] FixedUpdateNetwork: ObjId={Object.Id} InputAuthority={Object.InputAuthority} rawDir={data.direction}");
+            //Debug.Log($"[STATE] FixedUpdateNetwork: ObjId={Object.Id} InputAuthority={Object.InputAuthority} rawDir={data.direction}");
+            inputDirection = data.direction;
+            if (inputDirection.sqrMagnitude > 0f)
+                inputDirection = inputDirection.normalized;
+        }
 
-            // Je¿eli mamy input, skaluje go do prêdkoœci maksymalnej kontrolera.
-            // Najpierw ograniczamy magnitudê (keyboard mo¿e dawaæ sqrt(2) przy diagonalu)
-            var inputDir = data.direction;
-            if (inputDir.sqrMagnitude > 0f)
+        // 1) State Authority robi faktyczny, autoratywny ruch
+        if (Object.HasStateAuthority)
+        {
+            // przekazujemy kierunek (nie skalujemy) — NetworkCharacterController normalizuje i u¿ywa acceleration/braking/maxSpeed
+            if (inputDirection.sqrMagnitude > 0f)
+                _cc?.Move(inputDirection);
+            else
+                _cc?.Move(Vector3.zero);
+            // (dane sieciowe i Velocity s¹ aktualizowane wewn¹trz Move)
+            return;
+        }
+
+        // 2) Jeœli nie mamy state authority ale mamy InputAuthority -> symulujemy lokalnie (predykcja wizualna)
+        if (Object.HasInputAuthority)
+        {
+            // jeœli mamy NetworkCharacterController, korzystaj z jego parametrów do dopasowania predykcji
+            float accel = _cc != null ? _cc.acceleration : 10f;
+            float braking = _cc != null ? _cc.braking : 10f;
+            float maxSpeed = _cc != null ? _cc.maxSpeed : _speed;
+
+            // Predykcja prostego modelu: interpoluj prêdkoœæ poziom¹ w kierunku targetu
+            Vector3 targetHorizontal = inputDirection.sqrMagnitude > 0f ? inputDirection * maxSpeed : Vector3.zero;
+
+            // u¿ywamy Runner.DeltaTime (tick delta) do predykcji spójnej z serwerem
+            float dt = Runner.DeltaTime;
+
+            // przyspieszenie / hamowanie: lerp w stronê targetu, tempo zale¿ne od accel/braking
+            if (targetHorizontal.sqrMagnitude > 0f)
             {
-                var dirNormalized = inputDir.normalized;
-                desiredVelocity = dirNormalized * _speed; // units per second
+                _predictedHorizontalVelocity = Vector3.MoveTowards(_predictedHorizontalVelocity, targetHorizontal, accel * dt);
             }
-            // else desiredVelocity zostaje zero
+            else
+            {
+                _predictedHorizontalVelocity = Vector3.MoveTowards(_predictedHorizontalVelocity, Vector3.zero, braking * dt);
+            }
+
+            // zastosuj lokalny ruch przez CharacterController jeœli dostêpny (bardziej fizyczne ni¿ transform.translate)
+            if (_localController != null)
+            {
+                // zachowaj Y z aktualnego Velocity (prosta grawitacja/pozycja) — tu utrzymujemy tylko poziomy ruch
+                Vector3 move = new Vector3(_predictedHorizontalVelocity.x, 0f, _predictedHorizontalVelocity.z) * dt;
+                _localController.Move(move);
+            }
+            else
+            {
+                // fallback: porusz transformem
+                transform.position += new Vector3(_predictedHorizontalVelocity.x, 0f, _predictedHorizontalVelocity.z) * dt;
+            }
+
+            // UWAGA: autoratywny serwer w kolejnych tickach mo¿e skorygowaæ pozycjê — to normalne
+            return;
         }
 
-        // WA¯NE: przeka¿emy prêdkoœæ (units/sec) do kontrolera — on wewnêtrznie poradzi siê z delta/time/acceleration/braking
-        if (_cc != null)
-        {
-            _cc.Move(desiredVelocity);
-        }
-        else
-        {
-            // fallback: jeœli kontroler nie istnieje, stosuj zwyk³y przesuw (tu z deltaTime)
-            transform.position += desiredVelocity * Runner.DeltaTime;
-        }
+        // 3) Brak prawa do inputu ani stanu — nic nie robimy
     }
 }
