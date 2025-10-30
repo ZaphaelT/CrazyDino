@@ -10634,7 +10634,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3412092660507506771
 Transform:
   m_ObjectHideFlags: 0
@@ -20591,9 +20591,8 @@ GameObject:
   - component: {fileID: 1282084792502572885}
   - component: {fileID: 4202089680298569665}
   - component: {fileID: 3603240872568393745}
-  - component: {fileID: 2730856879295555910}
   - component: {fileID: 6209661754083061691}
-  - component: {fileID: 7223764005750452220}
+  - component: {fileID: 7612048364790168720}
   m_Layer: 0
   m_Name: OperatorPlayer
   m_TagString: Untagged
@@ -20690,19 +20689,6 @@ MonoBehaviour:
   braking: 100000
   maxSpeed: 20
   rotationSpeed: 15
---- !u!114 &2730856879295555910
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8290692853389979247}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd4982b5d6423842afb1ef8a08a8a91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerCamera: {fileID: 2352352965592866772}
 --- !u!114 &6209661754083061691
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20721,9 +20707,8 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 3603240872568393745}
-  - {fileID: 2730856879295555910}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7223764005750452220
+--- !u!114 &7612048364790168720
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20732,7 +20717,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 8290692853389979247}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b19334d5e717b8e479872f51e0e21512, type: 3}
+  m_Script: {fileID: 11500000, guid: 85283776a53cddf46b9f5cac3d7e03ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &8291951860734597546
