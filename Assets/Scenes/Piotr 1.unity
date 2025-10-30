@@ -821,7 +821,7 @@ MonoBehaviour:
   _dinosaurPrefab:
     RawGuidValue: c21a4719dbba24f41acc18ea778fde55
   _operatorPrefab:
-    RawGuidValue: 16bce2e077eb68c42b63147480e04e99
+    RawGuidValue: f62aaffeea502c14e9951c7b939d1af9
 --- !u!4 &999585089
 Transform:
   m_ObjectHideFlags: 0
