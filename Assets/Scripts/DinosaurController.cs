@@ -15,6 +15,9 @@ public class DinosaurController : NetworkBehaviour
     private Quaternion _cameraRotationOnDetach;
 
     [Networked] private bool IsRunning { get; set; }
+    [Networked] private bool IsAttacking { get; set; }
+    private float _attackAnimDuration = 0.7f; // dopasuj do d³ugoœci animacji ataku
+    private float _attackTimer = 0f;
 
     public override void Spawned()
     {
@@ -49,6 +52,11 @@ public class DinosaurController : NetworkBehaviour
                 playerCamera.gameObject.SetActive(false);
             }
         }
+
+        if (_isLocal)
+        {
+            DinoAttackButton.LocalDino = this;
+        }
     }
 
     void LateUpdate()
@@ -60,13 +68,19 @@ public class DinosaurController : NetworkBehaviour
         }
 
         if (_animator != null)
+        {
             _animator.SetBool("isRunning", IsRunning);
+            _animator.SetBool("isAttacking", IsAttacking);
+        }
     }
 
     void OnDestroy()
     {
         if (_cameraDetached && playerCamera != null)
             Destroy(playerCamera.gameObject);
+
+        if (_isLocal && DinoAttackButton.LocalDino == this)
+            DinoAttackButton.LocalDino = null;
     }
 
     public override void FixedUpdateNetwork()
@@ -94,5 +108,33 @@ public class DinosaurController : NetworkBehaviour
             transform.position += desiredVelocity * Runner.DeltaTime;
 
         IsRunning = isRunning;
+
+        if (IsAttacking)
+        {
+            _attackTimer += Runner.DeltaTime;
+            if (_attackTimer >= _attackAnimDuration)
+            {
+                IsAttacking = false;
+                _attackTimer = 0f;
+            }
+        }
+    }
+
+    public void Attack()
+    {
+        if (_isLocal && Object.HasInputAuthority)
+        {
+            RPC_Attack();
+        }
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_Attack()
+    {
+        if (!IsAttacking)
+        {
+            IsAttacking = true;
+            _attackTimer = 0f;
+        }
     }
 }
