@@ -4,6 +4,7 @@ using UnityEngine;
 public class Player : NetworkBehaviour
 {
     private NetworkCharacterController _cc;
+    private Animator _animator; 
 
     [SerializeField] private Camera playerCamera;
     private float _speed;
@@ -16,6 +17,7 @@ public class Player : NetworkBehaviour
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
+        _animator = GetComponent<Animator>(); 
 
         if (_cc != null)
             _speed = _cc.maxSpeed;
@@ -68,6 +70,7 @@ public class Player : NetworkBehaviour
             return;
 
         Vector3 desiredVelocity = Vector3.zero;
+        bool isRunning = false;
 
         if (GetInput(out NetworkInputData data))
         {
@@ -76,6 +79,7 @@ public class Player : NetworkBehaviour
             {
                 var dirNormalized = inputDir.normalized;
                 desiredVelocity = dirNormalized * _speed;
+                isRunning = true;
             }
         }
 
@@ -83,5 +87,8 @@ public class Player : NetworkBehaviour
             _cc.Move(desiredVelocity);
         else
             transform.position += desiredVelocity * Runner.DeltaTime;
+
+        if (_animator != null)
+            _animator.SetBool("isRunning", isRunning);
     }
 }

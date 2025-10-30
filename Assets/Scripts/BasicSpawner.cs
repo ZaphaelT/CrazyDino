@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
+
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
     private InputSystem_Actions _controls;
@@ -96,7 +97,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         Debug.Log($"OnObjectExitAOI: obj={obj.Id} for player={player}");
     }
 
-    [SerializeField] private NetworkPrefabRef _playerPrefab;
+    [SerializeField] private NetworkPrefabRef _dinosaurPrefab;
+    [SerializeField] private NetworkPrefabRef _operatorPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
@@ -105,8 +107,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
         if (runner.IsServer)
         {
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
+            int playerIndex = _spawnedCharacters.Count;
+            NetworkPrefabRef prefab = (playerIndex == 0) ? _dinosaurPrefab : _operatorPrefab;
+
+            Vector3 spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
 
             if (networkPlayerObject != null)
             {

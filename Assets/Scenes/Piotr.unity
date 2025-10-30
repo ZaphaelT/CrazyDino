@@ -818,8 +818,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f9f80a40df05194cb92d66b7370bd7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _playerPrefab:
+  _dinosaurPrefab:
     RawGuidValue: c21a4719dbba24f41acc18ea778fde55
+  _operatorPrefab:
+    RawGuidValue: 16bce2e077eb68c42b63147480e04e99
 --- !u!4 &999585089
 Transform:
   m_ObjectHideFlags: 0
