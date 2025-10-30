@@ -4,7 +4,7 @@ using UnityEngine;
 public class Player : NetworkBehaviour
 {
     private NetworkCharacterController _cc;
-    private Animator _animator; 
+    private Animator _animator;
 
     [SerializeField] private Camera playerCamera;
     private float _speed;
@@ -14,10 +14,12 @@ public class Player : NetworkBehaviour
     private Vector3 _cameraOffset;
     private Quaternion _cameraRotationOnDetach;
 
+    [Networked] private bool IsRunning { get; set; }
+
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
-        _animator = GetComponent<Animator>(); 
+        _animator = GetComponent<Animator>();
 
         if (_cc != null)
             _speed = _cc.maxSpeed;
@@ -56,6 +58,10 @@ public class Player : NetworkBehaviour
             playerCamera.transform.position = transform.position + _cameraOffset;
             playerCamera.transform.rotation = _cameraRotationOnDetach;
         }
+
+        // Ustaw animacjê na podstawie zsynchronizowanej zmiennej
+        if (_animator != null)
+            _animator.SetBool("isRunning", IsRunning);
     }
 
     void OnDestroy()
@@ -88,7 +94,7 @@ public class Player : NetworkBehaviour
         else
             transform.position += desiredVelocity * Runner.DeltaTime;
 
-        if (_animator != null)
-            _animator.SetBool("isRunning", isRunning);
+        // Synchronizuj stan animacji przez sieæ
+        IsRunning = isRunning;
     }
 }
