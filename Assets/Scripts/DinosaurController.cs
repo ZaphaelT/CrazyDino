@@ -16,8 +16,12 @@ public class DinosaurController : NetworkBehaviour
 
     [Networked] private bool IsRunning { get; set; }
     [Networked] private bool IsAttacking { get; set; }
-    private float _attackAnimDuration = 0.7f; // dopasuj do d³ugoœci animacji ataku
+    private float _attackAnimDuration = 0.7f;
     private float _attackTimer = 0f;
+
+    [SerializeField] private float attackRadius = 2.0f;
+    [SerializeField] private int attackDamage = 10;
+    [SerializeField] private LayerMask attackLayerMask; 
 
     public override void Spawned()
     {
@@ -128,6 +132,21 @@ public class DinosaurController : NetworkBehaviour
         }
     }
 
+    private void PerformAttack()
+    {
+        Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
+        Collider[] hits = Physics.OverlapSphere(center, attackRadius, attackLayerMask);
+
+        foreach (var hit in hits)
+        {
+            var damageable = hit.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage);
+            }
+        }
+    }
+
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_Attack()
     {
@@ -135,6 +154,14 @@ public class DinosaurController : NetworkBehaviour
         {
             IsAttacking = true;
             _attackTimer = 0f;
+            PerformAttack();
         }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
+        Gizmos.DrawWireSphere(center, attackRadius);
     }
 }

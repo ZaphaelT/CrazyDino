@@ -20722,6 +20722,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 2352352965592866772}
+  attackRadius: 15
+  attackDamage: 10
+  attackLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &8291951860734597546
 GameObject:
   m_ObjectHideFlags: 0
