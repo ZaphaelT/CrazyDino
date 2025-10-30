@@ -74,10 +74,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             }
         }
 
+        // zachowujemy kierunek ruchu (dla dino)
         data.direction = new Vector3(move.x, 0f, move.y);
 
-        // DEBUG - poka¿ kto wysy³a input i co
-        //Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
+        // zapisujemy ten sam wektor jako input kamery (operator u¿yje tego pola)
+        data.camera = move;
 
         input.Set(data);
     }

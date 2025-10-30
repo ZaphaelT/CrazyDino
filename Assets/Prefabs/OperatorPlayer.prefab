@@ -20707,6 +20707,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 3603240872568393745}
+  - {fileID: 7612048364790168720}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7612048364790168720
 MonoBehaviour:
@@ -20720,6 +20721,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85283776a53cddf46b9f5cac3d7e03ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerCamera: {fileID: 0}
+  panSpeed: 10
+  cameraHeight: 10
+  initialPitch: 75
+  deadzone: 0.08
+  useBounds: 0
+  minXZ: {x: -50, y: -50}
+  maxXZ: {x: 50, y: 50}
 --- !u!1 &8291951860734597546
 GameObject:
   m_ObjectHideFlags: 0
