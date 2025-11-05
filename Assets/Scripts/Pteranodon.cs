@@ -8,8 +8,8 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     private Animator _animator;
     private NavMeshAgent _agent;
 
-    [Networked, OnChangedRender(nameof(OnIsWalkingChanged))]
-    private bool IsWalking { get; set; }
+    // Usuniêto [Networked] dla IsWalking
+    private bool IsWalking = false;
 
     [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
     private bool IsDead { get; set; }
@@ -58,7 +58,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
                 _agent.isStopped = false;
                 _currentPatrolIndex = 0;
                 _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
-                IsWalking = true;
+                SetWalkingState(true);
             }
         }
     }
@@ -78,7 +78,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
                 }
 
                 if (IsWalking)
-                    IsWalking = false;
+                    SetWalkingState(false);
 
                 return;
             }
@@ -86,7 +86,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             if (_agent == null || patrolPoints == null || patrolPoints.Length == 0)
             {
                 if (IsWalking)
-                    IsWalking = false;
+                    SetWalkingState(false);
 
                 return;
             }
@@ -99,7 +99,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
 
             if (IsWalking != isMoving)
-                IsWalking = isMoving;
+                SetWalkingState(isMoving);
 
             if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(_agent.stoppingDistance, acceptDistance))
             {
@@ -115,6 +115,19 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             transform.position = NetworkedPosition;
             transform.rotation = NetworkedRotation;
         }
+    }
+
+    private void SetWalkingState(bool walking)
+    {
+        IsWalking = walking;
+        RPC_SetWalkingState(walking);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_SetWalkingState(bool walking)
+    {
+        if (_animator != null)
+            _animator.SetBool("isWalking", walking);
     }
 
     public void TakeDamage(int amount)
@@ -144,12 +157,6 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     {
         if (_animator != null)
             _animator.SetTrigger("TakeDamage");
-    }
-
-    private void OnIsWalkingChanged()
-    {
-        if (_animator != null)
-            _animator.SetBool("isWalking", IsWalking);
     }
 
     private void OnIsDeadChanged()
