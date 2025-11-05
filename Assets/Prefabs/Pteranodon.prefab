@@ -12644,6 +12644,7 @@ GameObject:
   - component: {fileID: 3001856110314248643}
   - component: {fileID: 5988165893461885080}
   - component: {fileID: 3696342012376714874}
+  - component: {fileID: 6908243445228819609}
   m_Layer: 6
   m_Name: Pteranodon
   m_TagString: Untagged
@@ -12725,6 +12726,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d2be0809da17049ad8d21b2cb2fd4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHp: 100
+  patrolPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  acceptDistance: 0.5
+  autoStartPatrol: 1
 --- !u!114 &3696342012376714874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12744,6 +12752,28 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 5988165893461885080}
   ForceRemoteRenderTimeframe: 0
+--- !u!195 &6908243445228819609
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8979464057863135477}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &8985175659096425797
 GameObject:
   m_ObjectHideFlags: 0

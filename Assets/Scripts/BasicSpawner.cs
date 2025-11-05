@@ -110,13 +110,14 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             int playerIndex = _spawnedCharacters.Count;
             // zamienione: pierwszy gracz = operator, kolejni = dino
-            NetworkPrefabRef prefab = (playerIndex == 0) ? _operatorPrefab : _dinosaurPrefab;
+            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
 
             Vector3 spawnPosition = new Vector3(playerIndex * 3, 1, 0);
             NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
 
             if (networkPlayerObject != null)
             {
+
                 networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
                 _spawnedCharacters.Add(player, networkPlayerObject);
                 Debug.Log($"Spawned: player={player} Prefab={(playerIndex==0? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");

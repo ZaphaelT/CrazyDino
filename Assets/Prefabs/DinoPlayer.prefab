@@ -20613,6 +20613,7 @@ Transform:
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3412092660507506771}
   - {fileID: 5035543826410270980}
   - {fileID: 3376632818964316111}
   - {fileID: 3005072859703759571}
@@ -20620,7 +20621,6 @@ Transform:
   - {fileID: 6134496671511998106}
   - {fileID: 7662148571878507029}
   - {fileID: 4526286891337182335}
-  - {fileID: 3412092660507506771}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &1282084792502572885
@@ -20723,7 +20723,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 2352352965592866772}
   attackRadius: 15
-  attackDamage: 10
+  attackDamage: 40
   attackLayerMask:
     serializedVersion: 2
     m_Bits: 64
