@@ -20,6 +20,9 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     [Networked]
     private Vector3 NetworkedPosition { get; set; }
 
+    [Networked]
+    private Quaternion NetworkedRotation { get; set; }
+
     [SerializeField]
     private int maxHp = 100;
 
@@ -105,10 +108,12 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             }
 
             NetworkedPosition = transform.position;
+            NetworkedRotation = transform.rotation;
         }
         else
         {
             transform.position = NetworkedPosition;
+            transform.rotation = NetworkedRotation;
         }
     }
 
