@@ -12643,6 +12643,7 @@ GameObject:
   - component: {fileID: 72076076567436882}
   - component: {fileID: 3001856110314248643}
   - component: {fileID: 5988165893461885080}
+  - component: {fileID: 3696342012376714874}
   m_Layer: 6
   m_Name: Pteranodon
   m_TagString: Untagged
@@ -12724,6 +12725,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d2be0809da17049ad8d21b2cb2fd4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3696342012376714874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8979464057863135477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3674644306
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 5988165893461885080}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &8985175659096425797
 GameObject:
   m_ObjectHideFlags: 0
