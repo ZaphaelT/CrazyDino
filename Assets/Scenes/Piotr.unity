@@ -10619,7 +10619,7 @@ MonoBehaviour:
   _dinosaurPrefab:
     RawGuidValue: c21a4719dbba24f41acc18ea778fde55
   _operatorPrefab:
-    RawGuidValue: 16bce2e077eb68c42b63147480e04e99
+    RawGuidValue: eb39951e8e1c72540b3c77a29e6a1353
   spawnPoints:
   - {fileID: 1664671792}
 --- !u!4 &999585089

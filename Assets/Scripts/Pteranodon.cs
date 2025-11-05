@@ -8,7 +8,6 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     private Animator _animator;
     private NavMeshAgent _agent;
 
-    // Usuniêto [Networked] dla IsWalking
     private bool IsWalking = false;
 
     [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
