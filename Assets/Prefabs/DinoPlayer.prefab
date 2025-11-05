@@ -10643,13 +10643,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3763272335342451014}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.1305268, y: -0, z: -0, w: 0.9914448}
-  m_LocalPosition: {x: 0, y: 17, z: -30}
+  m_LocalRotation: {x: 0.35895863, y: -0, z: -0, w: 0.9333535}
+  m_LocalPosition: {x: 0, y: 38.63, z: -26.01}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2034191475357517195}
-  m_LocalEulerAnglesHint: {x: 15, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 42.073, y: 0, z: 0}
 --- !u!20 &2352352965592866772
 Camera:
   m_ObjectHideFlags: 0
@@ -20591,8 +20591,8 @@ GameObject:
   - component: {fileID: 1282084792502572885}
   - component: {fileID: 4202089680298569665}
   - component: {fileID: 3603240872568393745}
-  - component: {fileID: 2730856879295555910}
   - component: {fileID: 6209661754083061691}
+  - component: {fileID: 7223764005750452220}
   m_Layer: 0
   m_Name: DinoPlayer
   m_TagString: Untagged
@@ -20613,6 +20613,7 @@ Transform:
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3412092660507506771}
   - {fileID: 5035543826410270980}
   - {fileID: 3376632818964316111}
   - {fileID: 3005072859703759571}
@@ -20620,7 +20621,6 @@ Transform:
   - {fileID: 6134496671511998106}
   - {fileID: 7662148571878507029}
   - {fileID: 4526286891337182335}
-  - {fileID: 3412092660507506771}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &1282084792502572885
@@ -20669,7 +20669,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 0.4, z: -0.36}
 --- !u!114 &3603240872568393745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20685,22 +20685,10 @@ MonoBehaviour:
   _stateAuthorityChangeErrorCorrectionDelta: 0
   gravity: -20
   jumpImpulse: 8
-  acceleration: 10
-  braking: 10
-  maxSpeed: 2
+  acceleration: 100000
+  braking: 100000
+  maxSpeed: 20
   rotationSpeed: 15
---- !u!114 &2730856879295555910
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8290692853389979247}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd4982b5d6423842afb1ef8a08a8a91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &6209661754083061691
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20719,8 +20707,26 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 3603240872568393745}
-  - {fileID: 2730856879295555910}
+  - {fileID: 7223764005750452220}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &7223764005750452220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8290692853389979247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b19334d5e717b8e479872f51e0e21512, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerCamera: {fileID: 2352352965592866772}
+  attackRadius: 15
+  attackDamage: 40
+  attackLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &8291951860734597546
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,167 @@
+using Fusion;
+using UnityEngine;
+
+public class DinosaurController : NetworkBehaviour
+{
+    private NetworkCharacterController _cc;
+    private Animator _animator;
+
+    [SerializeField] private Camera playerCamera;
+    private float _speed;
+
+    private bool _isLocal;
+    private bool _cameraDetached;
+    private Vector3 _cameraOffset;
+    private Quaternion _cameraRotationOnDetach;
+
+    [Networked] private bool IsRunning { get; set; }
+    [Networked] private bool IsAttacking { get; set; }
+    private float _attackAnimDuration = 0.7f;
+    private float _attackTimer = 0f;
+
+    [SerializeField] private float attackRadius = 2.0f;
+    [SerializeField] private int attackDamage = 10;
+    [SerializeField] private LayerMask attackLayerMask; 
+
+    public override void Spawned()
+    {
+        _cc = GetComponent<NetworkCharacterController>();
+        _animator = GetComponent<Animator>();
+
+        if (_cc != null)
+            _speed = _cc.maxSpeed;
+        else
+            _speed = 5f;
+
+        if (playerCamera == null)
+            playerCamera = GetComponentInChildren<Camera>(true);
+
+        _isLocal = Object.HasInputAuthority;
+
+        if (playerCamera != null)
+        {
+            if (_isLocal)
+            {
+                _cameraOffset = playerCamera.transform.position - transform.position;
+                _cameraRotationOnDetach = playerCamera.transform.rotation;
+                playerCamera.transform.SetParent(null);
+                _cameraDetached = true;
+                playerCamera.gameObject.SetActive(true);
+                var audio = playerCamera.GetComponent<AudioListener>();
+                if (audio != null)
+                    audio.enabled = true;
+            }
+            else
+            {
+                playerCamera.gameObject.SetActive(false);
+            }
+        }
+
+        if (_isLocal)
+        {
+            DinoAttackButton.LocalDino = this;
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (_isLocal && playerCamera != null)
+        {
+            playerCamera.transform.position = transform.position + _cameraOffset;
+            playerCamera.transform.rotation = _cameraRotationOnDetach;
+        }
+
+        if (_animator != null)
+        {
+            _animator.SetBool("isRunning", IsRunning);
+            _animator.SetBool("isAttacking", IsAttacking);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (_cameraDetached && playerCamera != null)
+            Destroy(playerCamera.gameObject);
+
+        if (_isLocal && DinoAttackButton.LocalDino == this)
+            DinoAttackButton.LocalDino = null;
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (!Object.HasStateAuthority)
+            return;
+
+        Vector3 desiredVelocity = Vector3.zero;
+        bool isRunning = false;
+
+        if (GetInput(out NetworkInputData data))
+        {
+            var inputDir = data.direction;
+            if (inputDir.sqrMagnitude > 0f)
+            {
+                var dirNormalized = inputDir.normalized;
+                desiredVelocity = dirNormalized * _speed;
+                isRunning = true;
+            }
+        }
+
+        if (_cc != null)
+            _cc.Move(desiredVelocity);
+        else
+            transform.position += desiredVelocity * Runner.DeltaTime;
+
+        IsRunning = isRunning;
+
+        if (IsAttacking)
+        {
+            _attackTimer += Runner.DeltaTime;
+            if (_attackTimer >= _attackAnimDuration)
+            {
+                IsAttacking = false;
+                _attackTimer = 0f;
+            }
+        }
+    }
+
+    public void Attack()
+    {
+        if (_isLocal && Object.HasInputAuthority)
+        {
+            RPC_Attack();
+        }
+    }
+
+    private void PerformAttack()
+    {
+        Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
+        Collider[] hits = Physics.OverlapSphere(center, attackRadius, attackLayerMask);
+
+        foreach (var hit in hits)
+        {
+            var damageable = hit.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage);
+            }
+        }
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_Attack()
+    {
+        if (!IsAttacking)
+        {
+            IsAttacking = true;
+            _attackTimer = 0f;
+            PerformAttack();
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
+        Gizmos.DrawWireSphere(center, attackRadius);
+    }
+}

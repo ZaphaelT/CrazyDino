@@ -4,85 +4,128 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
+
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    private InputSystem_Actions _controls;
+
     public void OnConnectedToServer(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnConnectedToServer");
     }
 
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
     {
-        throw new NotImplementedException();
+        Debug.LogWarning($"OnConnectFailed: reason={reason} remote={remoteAddress}");
     }
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnConnectRequest");
     }
 
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnCustomAuthenticationResponse");
     }
 
     public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnDisconnectedFromServer: reason={reason}");
     }
 
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnHostMigration");
+    }
+
+    private void OnEnable()
+    {
+        if (_controls == null)
+            _controls = new InputSystem_Actions();
+
+        // W³¹czamy mapê Player (aktywnuje wszystkie akcje w tej mapie)
+        _controls.Player.Enable();
+    }
+
+    private void OnDisable()
+    {
+        if (_controls != null)
+            _controls.Player.Disable();
     }
 
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
         var data = new NetworkInputData();
 
-        if (Input.GetKey(KeyCode.W))
-            data.direction += Vector3.forward;
+        Vector2 move = Vector2.zero;
 
-        if (Input.GetKey(KeyCode.S))
-            data.direction += Vector3.back;
+        if (_controls != null)
+        {
+            try
+            {
+                move = _controls.Player.Move.ReadValue<Vector2>();
+            }
+            catch (Exception)
+            {
+                move = Vector2.zero;
+            }
+        }
 
-        if (Input.GetKey(KeyCode.A))
-            data.direction += Vector3.left;
+        // zachowujemy kierunek ruchu (dla dino)
+        data.direction = new Vector3(move.x, 0f, move.y);
 
-        if (Input.GetKey(KeyCode.D))
-            data.direction += Vector3.right;
+        // zapisujemy ten sam wektor jako input kamery (operator u¿yje tego pola)
+        data.camera = move;
 
         input.Set(data);
     }
 
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnInputMissing: player={player}");
     }
 
     public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnObjectEnterAOI: obj={obj.Id} for player={player}");
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnObjectExitAOI: obj={obj.Id} for player={player}");
     }
 
-    [SerializeField] private NetworkPrefabRef _playerPrefab;
+    [SerializeField] private NetworkPrefabRef _dinosaurPrefab;
+    [SerializeField] private NetworkPrefabRef _operatorPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
+        Debug.Log($"OnPlayerJoined called on runner.IsServer={runner.IsServer} RunnerLocalPlayer={runner.LocalPlayer} player={player}");
+
         if (runner.IsServer)
         {
-            // Create a unique position for the player
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            // Keep track of the player avatars for easy access
-            _spawnedCharacters.Add(player, networkPlayerObject);
+            int playerIndex = _spawnedCharacters.Count;
+            // zamienione: pierwszy gracz = operator, kolejni = dino
+            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
+
+            Vector3 spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
+
+            if (networkPlayerObject != null)
+            {
+
+                networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
+                _spawnedCharacters.Add(player, networkPlayerObject);
+                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==0? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+            }
+            else
+            {
+                Debug.LogError($"Spawn failed for player={player}");
+            }
         }
     }
 
@@ -92,62 +135,61 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         {
             runner.Despawn(networkObject);
             _spawnedCharacters.Remove(player);
+            Debug.Log($"OnPlayerLeft: despawned player={player}");
         }
     }
 
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnReliableDataProgress: player={player} key={key} progress={progress}");
     }
 
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnReliableDataReceived: player={player} key={key} len={data.Count}");
     }
 
     public void OnSceneLoadDone(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnSceneLoadDone");
     }
 
     public void OnSceneLoadStart(NetworkRunner runner)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnSceneLoadStart");
     }
 
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnSessionListUpdated: count={sessionList?.Count}");
     }
 
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
-        throw new NotImplementedException();
+        Debug.Log($"OnShutdown: reason={shutdownReason}");
     }
 
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
     {
-        throw new NotImplementedException();
+        Debug.Log("OnUserSimulationMessage");
     }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    void Start() { }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    void Update() { }
+
     private NetworkRunner _runner;
 
     async void StartGame(GameMode mode)
     {
-        // Create the Fusion runner and let it know that we will be providing user input
+        // Create the Fusion runner
         _runner = gameObject.AddComponent<NetworkRunner>();
-        _runner.ProvideInput = true;
+
+        // Only provide input on client/host (not on a dedicated server instance)
+        _runner.ProvideInput = (mode == GameMode.Client || mode == GameMode.Host);
+
+        // Register this object as callbacks provider so Fusion calls your INetworkRunnerCallbacks
+        _runner.AddCallbacks(this);
 
         // Create the NetworkSceneInfo from the current scene
         var scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
@@ -157,7 +199,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             sceneInfo.AddSceneRef(scene, LoadSceneMode.Additive);
         }
 
-        // Start or join (depends on gamemode) a session with a specific name
+        // Start or join a session
         await _runner.StartGame(new StartGameArgs()
         {
             GameMode = mode,
@@ -166,6 +208,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         });
     }
+
     private void OnGUI()
     {
         if (_runner == null)
