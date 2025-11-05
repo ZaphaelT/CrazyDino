@@ -74,10 +74,11 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             }
         }
 
+        // zachowujemy kierunek ruchu (dla dino)
         data.direction = new Vector3(move.x, 0f, move.y);
 
-        // DEBUG - poka¿ kto wysy³a input i co
-        //Debug.Log($"OnInput: Machine={SystemInfo.deviceName} RunnerLocalPlayer={runner.LocalPlayer} IsServer={runner.IsServer} dir={data.direction}");
+        // zapisujemy ten sam wektor jako input kamery (operator u¿yje tego pola)
+        data.camera = move;
 
         input.Set(data);
     }
@@ -108,7 +109,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             int playerIndex = _spawnedCharacters.Count;
-            NetworkPrefabRef prefab = (playerIndex == 0) ? _dinosaurPrefab : _operatorPrefab;
+            // zamienione: pierwszy gracz = operator, kolejni = dino
+            NetworkPrefabRef prefab = (playerIndex == 0) ? _operatorPrefab : _dinosaurPrefab;
 
             Vector3 spawnPosition = new Vector3(playerIndex * 3, 1, 0);
             NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
@@ -117,7 +119,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             {
                 networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
                 _spawnedCharacters.Add(player, networkPlayerObject);
-                Debug.Log($"Spawned: player={player} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==0? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
             }
             else
             {
