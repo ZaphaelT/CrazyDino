@@ -3,27 +3,17 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Pteranodon : NetworkBehaviour, IDamageable
+public class Pteranodon : EnemyDino
 {
-    private Animator _animator;
-    private NavMeshAgent _agent;
 
     private bool IsWalking = false;
 
-    [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
-    private bool IsDead { get; set; }
-
-    [Networked]
-    private int Hp { get; set; }
 
     [Networked]
     private Vector3 NetworkedPosition { get; set; }
 
     [Networked]
     private Quaternion NetworkedRotation { get; set; }
-
-    [SerializeField]
-    private int maxHp = 100;
 
     [Header("Patrol")]
     [SerializeField]
@@ -129,44 +119,5 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             _animator.SetBool("isWalking", walking);
     }
 
-    public void TakeDamage(int amount)
-    {
-        if (!Object.HasStateAuthority || IsDead)
-            return;
 
-        Hp -= amount;
-
-        if (Hp <= 0)
-        {
-            Hp = 0;
-            IsDead = true;
-
-            if (_agent != null)
-                _agent.isStopped = true;
-        }
-        else
-        {
-            RPC_PlayTakeDamage();
-
-        }
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_PlayTakeDamage()
-    {
-        if (_animator != null)
-            _animator.SetTrigger("TakeDamage");
-    }
-
-    private void OnIsDeadChanged()
-    {
-        if (_animator != null)
-            _animator.SetTrigger("Death");
-    }
-
-    public void OnDeathAnimationEnd()
-    {
-        if (Object.HasStateAuthority)
-            Runner.Despawn(Object);
-    }
 }
