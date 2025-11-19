@@ -59,43 +59,7 @@ public class Pteranodon : EnemyDino
 
         if (Object.HasStateAuthority)
         {
-            if (IsDead)
-            {
-                if (_agent != null && !_agent.isStopped)
-                {
-                    _agent.isStopped = true;
-                }
-
-                if (IsWalking)
-                    SetWalkingState(false);
-
-                return;
-            }
-
-            if (_agent == null || patrolPoints == null || patrolPoints.Length == 0)
-            {
-                if (IsWalking)
-                    SetWalkingState(false);
-
-                return;
-            }
-
-            if (!_agent.hasPath && !_agent.pathPending)
-            {
-                _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
-            }
-
-            bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
-
-            if (IsWalking != isMoving)
-                SetWalkingState(isMoving);
-
-            if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(_agent.stoppingDistance, acceptDistance))
-            {
-                _currentPatrolIndex = (_currentPatrolIndex + 1) % patrolPoints.Length;
-                _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
-            }
-
+            HandlePatrolAndMovement();
             NetworkedPosition = transform.position;
             NetworkedRotation = transform.rotation;
         }
@@ -103,6 +67,46 @@ public class Pteranodon : EnemyDino
         {
             transform.position = NetworkedPosition;
             transform.rotation = NetworkedRotation;
+        }
+    }
+
+    private void HandlePatrolAndMovement()
+    {
+        if (IsDead)
+        {
+            if (_agent != null && !_agent.isStopped)
+            {
+                _agent.isStopped = true;
+            }
+
+            if (IsWalking)
+                SetWalkingState(false);
+
+            return;
+        }
+
+        if (_agent == null || patrolPoints == null || patrolPoints.Length == 0)
+        {
+            if (IsWalking)
+                SetWalkingState(false);
+
+            return;
+        }
+
+        if (!_agent.hasPath && !_agent.pathPending)
+        {
+            _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
+        }
+
+        bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
+
+        if (IsWalking != isMoving)
+            SetWalkingState(isMoving);
+
+        if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(_agent.stoppingDistance, acceptDistance))
+        {
+            _currentPatrolIndex = (_currentPatrolIndex + 1) % patrolPoints.Length;
+            _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
         }
     }
 

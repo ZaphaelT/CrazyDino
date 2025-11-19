@@ -3,11 +3,22 @@ using UnityEngine;
 
 public class DinosaurController : NetworkBehaviour
 {
+    public static DinosaurController Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+    }
+
     private NetworkCharacterController _cc;
     private Animator _animator;
 
+
+
     [SerializeField] private Camera playerCamera;
-    private float _speed;
 
     private bool _isLocal;
     private bool _cameraDetached;
@@ -20,8 +31,14 @@ public class DinosaurController : NetworkBehaviour
     private float _attackTimer = 0f;
 
     [SerializeField] private float attackRadius = 2.0f;
+
+    [SerializeField] private LayerMask attackLayerMask;
+    [Header("Stats to upgrade")]
     [SerializeField] private int attackDamage = 10;
-    [SerializeField] private LayerMask attackLayerMask; 
+    [SerializeField] private int _hp = 10;
+    [SerializeField] private float _speed;
+
+
 
     public override void Spawned()
     {
@@ -163,5 +180,15 @@ public class DinosaurController : NetworkBehaviour
         Gizmos.color = Color.red;
         Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
         Gizmos.DrawWireSphere(center, attackRadius);
+    }
+
+    public void MultiplyStatsOnLevelUp(float multiplier)
+    {
+        _speed *= multiplier;
+        attackDamage = Mathf.RoundToInt(attackDamage * multiplier);
+        _hp = Mathf.RoundToInt(_hp * multiplier);
+
+        if (_cc != null)
+            _cc.maxSpeed = _speed;
     }
 }

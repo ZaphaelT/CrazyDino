@@ -1037,6 +1037,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 549230259}
     - target: {fileID: 5988165893461885080, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
+      propertyPath: expValue
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 5988165893461885080, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
+      propertyPath: _animator
+      value: 
+      objectReference: {fileID: 161755535}
+    - target: {fileID: 5988165893461885080, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
       propertyPath: 'patrolPoints.Array.data[0]'
       value: 
       objectReference: {fileID: 656123145}
@@ -1057,6 +1065,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
+--- !u!95 &161755535 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 72076076567436882, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
+  m_PrefabInstance: {fileID: 161755534}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &165916985
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17271,10 +17284,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   expPerLevel: 100
   maxLevel: 3
+  statsMultiplier: 1.5
   expFillImage: {fileID: 1891422907}
   levelText: {fileID: 568536614}
-  currentLevel: 1
-  currentExp: 0
 --- !u!4 &1583207511
 Transform:
   m_ObjectHideFlags: 0

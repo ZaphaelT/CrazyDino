@@ -4,22 +4,18 @@ using UnityEngine.AI;
 
 public class EnemyDino : NetworkBehaviour, IDamageable
 {
-    public Animator _animator;
-    public NavMeshAgent _agent;
+    protected Animator _animator;
+    [SerializeField] protected NavMeshAgent _agent;
 
     [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
-    public bool IsDead { get; set; }
+    protected bool IsDead { get; set; }
 
-    [Networked]
-    public int Hp { get; set; }
+    [Networked] protected int Hp { get; set; }
 
-    [SerializeField]
-    public int maxHp = 100;
+    [SerializeField] protected int maxHp = 100;
 
-    [SerializeField]
-    private int expValue = 25; // iloœæ expa za zabicie
+    [SerializeField] private int expValue = 25; 
 
-    // Nowa wersja TakeDamage z atakuj¹cym
     public void TakeDamage(int amount)
     {
         if (!Object.HasStateAuthority || IsDead)
