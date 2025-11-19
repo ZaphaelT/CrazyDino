@@ -111,7 +111,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             int playerIndex = _spawnedCharacters.Count;
-            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
+            NetworkPrefabRef prefab = (playerIndex == 0) ? _operatorPrefab : _dinosaurPrefab;
 
             Vector3 spawnPosition = (spawnPoints != null && playerIndex < spawnPoints.Length)
                 ? spawnPoints[playerIndex].position

@@ -47,13 +47,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 0}
-  panSpeed: 10
+  panSpeed: 100
   cameraHeight: 100
   initialPitch: 75
   deadzone: 0.08
-  useBounds: 0
-  minXZ: {x: -50, y: -50}
-  maxXZ: {x: 50, y: 50}
+  useCameraRelativeMovement: 0
+  smoothSpeed: 130
+  useBounds: 1
+  minXZ: {x: -412.5, y: -779.4}
+  maxXZ: {x: 300.9, y: -179.4}
   debugForceLocalInEditor: 0
 --- !u!114 &7370171323939960107
 MonoBehaviour:
