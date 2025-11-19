@@ -16,14 +16,14 @@ public class DinosaurController : NetworkBehaviour
     private NetworkCharacterController _cc;
     private Animator _animator;
 
-
-
     [SerializeField] private Camera playerCamera;
 
     private bool _isLocal;
     private bool _cameraDetached;
-    private Vector3 _cameraOffset;
-    private Quaternion _cameraRotationOnDetach;
+
+    // przechowujemy offset i rotacjê wzglêdem lokalnego transform dino
+    private Vector3 _cameraLocalOffset;
+    private Quaternion _cameraLocalRotation;
 
     [Networked] private bool IsRunning { get; set; }
     [Networked] private bool IsAttacking { get; set; }
@@ -31,14 +31,11 @@ public class DinosaurController : NetworkBehaviour
     private float _attackTimer = 0f;
 
     [SerializeField] private float attackRadius = 2.0f;
-
     [SerializeField] private LayerMask attackLayerMask;
     [Header("Stats to upgrade")]
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private int _hp = 10;
     [SerializeField] private float _speed;
-
-
 
     public override void Spawned()
     {
@@ -59,13 +56,16 @@ public class DinosaurController : NetworkBehaviour
         {
             if (_isLocal)
             {
-                _cameraOffset = playerCamera.transform.position - transform.position;
-                _cameraRotationOnDetach = playerCamera.transform.rotation;
-                playerCamera.transform.SetParent(null);
+                // zapisz offset i rotacjê wzglêdem lokalnego transform dino
+                _cameraLocalOffset = transform.InverseTransformPoint(playerCamera.transform.position);
+                _cameraLocalRotation = Quaternion.Inverse(transform.rotation) * playerCamera.transform.rotation;
+
+                // odczep kamerê, zachowaj œwiatow¹ pozycjê
+                playerCamera.transform.SetParent(null, true);
                 _cameraDetached = true;
                 playerCamera.gameObject.SetActive(true);
-                var audio = playerCamera.GetComponent<AudioListener>();
-                if (audio != null)
+
+                if (playerCamera.TryGetComponent<AudioListener>(out var audio))
                     audio.enabled = true;
             }
             else
@@ -84,8 +84,9 @@ public class DinosaurController : NetworkBehaviour
     {
         if (_isLocal && playerCamera != null)
         {
-            playerCamera.transform.position = transform.position + _cameraOffset;
-            playerCamera.transform.rotation = _cameraRotationOnDetach;
+            // ustaw kamerê wg lokalnego offsetu wzglêdem dino (stabilne przy ró¿nych rotacjach spawn)
+            playerCamera.transform.position = transform.TransformPoint(_cameraLocalOffset);
+            playerCamera.transform.rotation = transform.rotation * _cameraLocalRotation;
         }
 
         if (_animator != null)
