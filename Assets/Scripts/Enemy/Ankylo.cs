@@ -3,27 +3,15 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Pteranodon : NetworkBehaviour, IDamageable
+public class Ankylo : EnemyDino
 {
-    private Animator _animator;
-    private NavMeshAgent _agent;
-
     private bool IsWalking = false;
-
-    [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
-    private bool IsDead { get; set; }
-
-    [Networked]
-    private int Hp { get; set; }
 
     [Networked]
     private Vector3 NetworkedPosition { get; set; }
 
     [Networked]
     private Quaternion NetworkedRotation { get; set; }
-
-    [SerializeField]
-    private int maxHp = 100;
 
     [Header("Patrol")]
     [SerializeField]
@@ -35,7 +23,12 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     [SerializeField]
     private bool autoStartPatrol = true;
 
+    [Header("Gracz i detekcja")]
+    [SerializeField]
+    private float playerDetectDistance = 10f;
+
     private int _currentPatrolIndex = 0;
+    private Transform playerTransform;
 
     void Awake()
     {
@@ -47,6 +40,9 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     {
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
+
+        if (DinosaurController.Instance != null)
+            playerTransform = DinosaurController.Instance.transform;
 
         if (Object.HasStateAuthority)
         {
@@ -67,22 +63,59 @@ public class Pteranodon : NetworkBehaviour, IDamageable
         if (!Object || !Object.IsValid)
             return;
 
+        if (playerTransform == null && DinosaurController.Instance != null)
+            playerTransform = DinosaurController.Instance.transform;
+
         if (Object.HasStateAuthority)
         {
-            if (IsDead)
+            HandlePatrolAndMovement();
+            NetworkedPosition = transform.position;
+            NetworkedRotation = transform.rotation;
+        }
+        else
+        {
+            transform.position = NetworkedPosition;
+            transform.rotation = NetworkedRotation;
+        }
+    }
+
+    private void HandlePatrolAndMovement()
+    {
+        if (IsDead)
+        {
+            if (_agent != null && !_agent.isStopped)
             {
-                if (_agent != null && !_agent.isStopped)
-                {
-                    _agent.isStopped = true;
-                }
-
-                if (IsWalking)
-                    SetWalkingState(false);
-
-                return;
+                _agent.isStopped = true;
             }
 
-            if (_agent == null || patrolPoints == null || patrolPoints.Length == 0)
+            if (IsWalking)
+                SetWalkingState(false);
+
+            return;
+        }
+
+        if (_agent == null)
+        {
+            if (IsWalking)
+                SetWalkingState(false);
+
+            return;
+        }
+
+        bool chasingPlayer = false;
+        if (playerTransform != null)
+        {
+            float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            if (distToPlayer <= playerDetectDistance)
+            {
+                _agent.SetDestination(playerTransform.position);
+                chasingPlayer = true;
+            }
+        }
+
+        if (!chasingPlayer)
+        {
+            if (patrolPoints == null || patrolPoints.Length == 0)
             {
                 if (IsWalking)
                     SetWalkingState(false);
@@ -95,25 +128,17 @@ public class Pteranodon : NetworkBehaviour, IDamageable
                 _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
             }
 
-            bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
-
-            if (IsWalking != isMoving)
-                SetWalkingState(isMoving);
-
             if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(_agent.stoppingDistance, acceptDistance))
             {
                 _currentPatrolIndex = (_currentPatrolIndex + 1) % patrolPoints.Length;
                 _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
             }
+        }
 
-            NetworkedPosition = transform.position;
-            NetworkedRotation = transform.rotation;
-        }
-        else
-        {
-            transform.position = NetworkedPosition;
-            transform.rotation = NetworkedRotation;
-        }
+        bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
+
+        if (IsWalking != isMoving)
+            SetWalkingState(isMoving);
     }
 
     private void SetWalkingState(bool walking)
@@ -127,46 +152,5 @@ public class Pteranodon : NetworkBehaviour, IDamageable
     {
         if (_animator != null)
             _animator.SetBool("isWalking", walking);
-    }
-
-    public void TakeDamage(int amount)
-    {
-        if (!Object.HasStateAuthority || IsDead)
-            return;
-
-        Hp -= amount;
-
-        if (Hp <= 0)
-        {
-            Hp = 0;
-            IsDead = true;
-
-            if (_agent != null)
-                _agent.isStopped = true;
-        }
-        else
-        {
-            RPC_PlayTakeDamage();
-
-        }
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_PlayTakeDamage()
-    {
-        if (_animator != null)
-            _animator.SetTrigger("TakeDamage");
-    }
-
-    private void OnIsDeadChanged()
-    {
-        if (_animator != null)
-            _animator.SetTrigger("Death");
-    }
-
-    public void OnDeathAnimationEnd()
-    {
-        if (Object.HasStateAuthority)
-            Runner.Despawn(Object);
     }
 }
