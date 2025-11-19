@@ -133,7 +133,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
                 Debug.Log($"Spawning player {player} at spawnIndex={spawnIndex} position={spawnPosition}");
             }
 
-            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
+            Quaternion spawnRotation = (selectedPoint != null) ? selectedPoint.rotation : Quaternion.identity;
+            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, spawnRotation, player);
 
             if (networkPlayerObject != null)
             {
