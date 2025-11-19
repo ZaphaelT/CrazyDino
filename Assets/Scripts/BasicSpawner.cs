@@ -111,20 +111,41 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             int playerIndex = _spawnedCharacters.Count;
+
+            // wybór prefabów (dostosuj jeœli chcesz innej logiki)
             NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
 
-            Vector3 spawnPosition = (spawnPoints != null && playerIndex < spawnPoints.Length)
-                ? spawnPoints[playerIndex].position
-                : new Vector3(playerIndex * 3, 1, 0);
+            Vector3 spawnPosition;
+            // walidacja tablicy spawnPoints
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                // upewnij siê, ¿e indeks mieœci siê w tablicy; jeœli nie, u¿yj ostatniego dostêpnego punktu
+                int spawnIndex = Mathf.Clamp(playerIndex, 0, spawnPoints.Length - 1);
+
+                if (spawnPoints[spawnIndex] == null)
+                {
+                    Debug.LogWarning($"Spawn point at index {spawnIndex} is null. Falling back to default position.");
+                    spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+                }
+                else
+                {
+                    spawnPosition = spawnPoints[spawnIndex].position;
+                    Debug.Log($"Spawning player {player} at spawnIndex={spawnIndex} position={spawnPosition}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("spawnPoints array is empty or null. Using fallback spawn position.");
+                spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+            }
 
             NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
 
             if (networkPlayerObject != null)
             {
-
                 networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
                 _spawnedCharacters.Add(player, networkPlayerObject);
-                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==0? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==1? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
             }
             else
             {
