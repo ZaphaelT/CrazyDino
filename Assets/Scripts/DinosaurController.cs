@@ -21,9 +21,10 @@ public class DinosaurController : NetworkBehaviour
     private bool _isLocal;
     private bool _cameraDetached;
 
-    // przechowujemy offset i rotacjê wzglêdem lokalnego transform dino
+    // przechowujemy offset wzglêdem lokalnego transform dino (pozycja)
+    // oraz œwiatow¹ rotacjê kamery w momencie odczepienia (¿eby kamera NIE obraca³a siê z dino)
     private Vector3 _cameraLocalOffset;
-    private Quaternion _cameraLocalRotation;
+    private Quaternion _cameraWorldRotation;
 
     [Networked] private bool IsRunning { get; set; }
     [Networked] private bool IsAttacking { get; set; }
@@ -56,11 +57,12 @@ public class DinosaurController : NetworkBehaviour
         {
             if (_isLocal)
             {
-                // zapisz offset i rotacjê wzglêdem lokalnego transform dino
+                // zapisujemy lokalny offset pozycji wzglêdem dino,
+                // ale zachowujemy ŒWIATOW¥ rotacjê kamery — dziêki temu kamera nie "przyczepi" siê obrotowo do dino
                 _cameraLocalOffset = transform.InverseTransformPoint(playerCamera.transform.position);
-                _cameraLocalRotation = Quaternion.Inverse(transform.rotation) * playerCamera.transform.rotation;
+                _cameraWorldRotation = playerCamera.transform.rotation;
 
-                // odczep kamerê, zachowaj œwiatow¹ pozycjê
+                // odczep kamerê i zachowaj œwiatow¹ pozycjê/rotacjê
                 playerCamera.transform.SetParent(null, true);
                 _cameraDetached = true;
                 playerCamera.gameObject.SetActive(true);
@@ -84,9 +86,9 @@ public class DinosaurController : NetworkBehaviour
     {
         if (_isLocal && playerCamera != null)
         {
-            // ustaw kamerê wg lokalnego offsetu wzglêdem dino (stabilne przy ró¿nych rotacjach spawn)
+            // ustaw pozycjê kamery wzglêdem dino (œledzi ruch), ale zachowaj zapisane obrót œwiata
             playerCamera.transform.position = transform.TransformPoint(_cameraLocalOffset);
-            playerCamera.transform.rotation = transform.rotation * _cameraLocalRotation;
+            playerCamera.transform.rotation = _cameraWorldRotation;
         }
 
         if (_animator != null)
@@ -103,6 +105,10 @@ public class DinosaurController : NetworkBehaviour
 
         if (_isLocal && DinoAttackButton.LocalDino == this)
             DinoAttackButton.LocalDino = null;
+
+        // jeœli singleton wskazywa³ na tê instancjê - wyczyœæ
+        if (Instance == this)
+            Instance = null;
     }
 
     public override void FixedUpdateNetwork()
