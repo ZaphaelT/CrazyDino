@@ -10621,9 +10621,8 @@ MonoBehaviour:
     RawGuidValue: c21a4719dbba24f41acc18ea778fde55
   _operatorPrefab:
     RawGuidValue: eb39951e8e1c72540b3c77a29e6a1353
-  spawnPoints:
-  - {fileID: 1664671792}
-  - {fileID: 1829188473}
+  dinoSpawnPoint: {fileID: 1664671792}
+  operatorSpawnPoint: {fileID: 1829188473}
 --- !u!4 &999585089
 Transform:
   m_ObjectHideFlags: 0

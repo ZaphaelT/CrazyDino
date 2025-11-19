@@ -102,7 +102,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _operatorPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
-    [SerializeField] private Transform[] spawnPoints; 
+    [SerializeField] private Transform dinoSpawnPoint;
+    [SerializeField] private Transform operatorSpawnPoint;
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
@@ -113,30 +114,23 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             int playerIndex = _spawnedCharacters.Count;
 
             // wybór prefabów (dostosuj jeœli chcesz innej logiki)
-            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
+            NetworkPrefabRef prefab = (playerIndex == 0) ? _operatorPrefab : _dinosaurPrefab; // tu zmieniamy kto jest pierwszy 0=operator,1=dino
 
             Vector3 spawnPosition;
-            // walidacja tablicy spawnPoints
-            if (spawnPoints != null && spawnPoints.Length > 0)
-            {
-                // upewnij siê, ¿e indeks mieœci siê w tablicy; jeœli nie, u¿yj ostatniego dostêpnego punktu
-                int spawnIndex = Mathf.Clamp(playerIndex, 0, spawnPoints.Length - 1);
+            int spawnIndex = prefab.Equals(_operatorPrefab) ? 1 : 0;
 
-                if (spawnPoints[spawnIndex] == null)
-                {
-                    Debug.LogWarning($"Spawn point at index {spawnIndex} is null. Falling back to default position.");
-                    spawnPosition = new Vector3(playerIndex * 3, 1, 0);
-                }
-                else
-                {
-                    spawnPosition = spawnPoints[spawnIndex].position;
-                    Debug.Log($"Spawning player {player} at spawnIndex={spawnIndex} position={spawnPosition}");
-                }
+            // wybierz przypisany punkt zgodnie z typem (0=dino,1=operator)
+            Transform selectedPoint = (spawnIndex == 1) ? operatorSpawnPoint : dinoSpawnPoint;
+
+            if (selectedPoint == null)
+            {
+                Debug.LogWarning($"Spawn point at index {spawnIndex} is null. Falling back to default position.");
+                spawnPosition = new Vector3(playerIndex * 3, 1, 0);
             }
             else
             {
-                Debug.LogWarning("spawnPoints array is empty or null. Using fallback spawn position.");
-                spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+                spawnPosition = selectedPoint.position;
+                Debug.Log($"Spawning player {player} at spawnIndex={spawnIndex} position={spawnPosition}");
             }
 
             NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
@@ -145,7 +139,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             {
                 networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
                 _spawnedCharacters.Add(player, networkPlayerObject);
-                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==1? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+                // POPRAWKA: u¿ywamy prefab, nie playerIndex, by opisaæ który prefab zosta³ spawnniêty
+                Debug.Log($"Spawned: player={player} Prefab={(prefab.Equals(_operatorPrefab) ? "Operator" : "Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
             }
             else
             {
