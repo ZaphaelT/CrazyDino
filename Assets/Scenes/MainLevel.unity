@@ -11722,8 +11722,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1089561850}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3559732, y: 0.31816912, z: -0.13034396, w: 0.86894304}
-  m_LocalPosition: {x: -142.33803, y: 91.71808, z: 162.84378}
+  m_LocalRotation: {x: 0.2712284, y: 0.55495936, z: -0.19775143, w: 0.7611503}
+  m_LocalPosition: {x: -446.9718, y: 361.2989, z: 19.667557}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -21816,6 +21816,10 @@ PrefabInstance:
     - target: {fileID: 4188875290539969543, guid: bbc057169e128ed48895ec0e5ff7d16c, type: 3}
       propertyPath: m_Name
       value: ExplosionEffect
+      objectReference: {fileID: 0}
+    - target: {fileID: 8696543910309184633, guid: bbc057169e128ed48895ec0e5ff7d16c, type: 3}
+      propertyPath: looping
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
