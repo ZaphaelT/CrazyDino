@@ -155,6 +155,7 @@ GameObject:
   - component: {fileID: 6716516701515965298}
   - component: {fileID: 3042932822634369486}
   - component: {fileID: 4889603627424709229}
+  - component: {fileID: 7827702992661882669}
   m_Layer: 0
   m_Name: Drone
   m_TagString: Untagged
@@ -196,6 +197,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 4889603627424709229}
+  - {fileID: 7827702992661882669}
   ForceRemoteRenderTimeframe: 0
 --- !u!195 &3042932822634369486
 NavMeshAgent:
@@ -239,6 +241,23 @@ MonoBehaviour:
   bombSpawnPoint: {fileID: 4152678311893605222}
   cooldownTime: 5
   visualModel: {fileID: 7140547718283101005}
+--- !u!114 &7827702992661882669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4508570685716188077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &5510206065565379089
 GameObject:
   m_ObjectHideFlags: 0
