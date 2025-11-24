@@ -171,20 +171,36 @@ public class OperatorController : NetworkBehaviour
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_RequestSpawnDrone(RpcInfo info = default)
     {
-        // Serwer sprawdza czy dron ju¿ istnieje
-        if (_myDrone != null && _myDrone.Object != null && _myDrone.Object.IsValid) return;
-
+        // ZABEZPIECZENIE: Sprawdzamy czy punkt startu zosta³ znaleziony
         if (droneSpawnPoint == null)
         {
-            Debug.LogError("Brak DroneSpawnPoint w inspektorze!");
+            Debug.LogError("B£¥D KRYTYCZNY: Serwer nie wie gdzie zespawnowaæ drona! droneSpawnPoint jest null.");
+
+            // Próba ratunkowa - szukamy jeszcze raz na serwerze
+            var found = GameObject.FindGameObjectWithTag("DroneBase");
+            if (found != null)
+            {
+                droneSpawnPoint = found.transform;
+                Debug.Log("Uff... Serwer znalaz³ bazê w ostatniej chwili.");
+            }
+            else
+            {
+                Debug.LogError("Nie znaleziono obiektu z tagiem 'DroneBase' na scenie!");
+                return;
+            }
+        }
+
+        if (_myDrone != null && _myDrone.Object != null && _myDrone.Object.IsValid)
+        {
+            Debug.Log("Dron ju¿ istnieje, nie spawnuje drugiego.");
             return;
         }
 
-        // Spawnujemy drona
+        Debug.Log($"Spawnujê drona w pozycji: {droneSpawnPoint.position}");
+
         NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
         DroneController droneScript = droneObj.GetComponent<DroneController>();
 
-        // Przypisujemy drona do operatora (serwer -> klient)
         RPC_SetLocalDroneRef(droneScript);
     }
 
