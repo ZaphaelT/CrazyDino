@@ -199,6 +199,7 @@ public class OperatorController : NetworkBehaviour
         Debug.Log($"Spawnujê drona w pozycji: {droneSpawnPoint.position}");
 
         NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
+        droneObj.AssignInputAuthority(info.Source);
         DroneController droneScript = droneObj.GetComponent<DroneController>();
 
         RPC_SetLocalDroneRef(droneScript);

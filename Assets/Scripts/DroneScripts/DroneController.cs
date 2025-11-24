@@ -1,22 +1,21 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.AI;
-using static Unity.Collections.Unicode;
 
 public class DroneController : NetworkBehaviour, IDamageable
 {
     [Header("Statystyki")]
     [SerializeField] private int maxHP = 30;
     [SerializeField] private float moveSpeed = 8f;
-    [SerializeField] private float flightHeight = 3.0f; // Wysokoœæ "wizualna"
+    [SerializeField] private float flightHeight = 10.0f;
 
     [Header("Bomba")]
     [SerializeField] private NetworkPrefabRef bombPrefab;
-    [SerializeField] private Transform bombSpawnPoint; // Punkt pod dronem
+    [SerializeField] private Transform bombSpawnPoint;
     [SerializeField] private float cooldownTime = 5f;
 
     [Header("Setup")]
-    [SerializeField] private Transform visualModel; // Ten obiekt przesuniemy w górê
+    [SerializeField] private Transform visualModel;
 
     [Networked] private int CurrentHP { get; set; }
     [Networked] private TickTimer BombCooldown { get; set; }
@@ -28,11 +27,9 @@ public class DroneController : NetworkBehaviour, IDamageable
         CurrentHP = maxHP;
         _agent = GetComponent<NavMeshAgent>();
 
-        // 1. Ustawienie modelu wizualnego (lewitacja)
+        // Ustawienie modelu wizualnego
         if (visualModel != null)
-        {
             visualModel.localPosition = new Vector3(0, flightHeight, 0);
-        }
 
         if (_agent != null)
         {
@@ -40,74 +37,57 @@ public class DroneController : NetworkBehaviour, IDamageable
             _agent.updateRotation = true;
             _agent.updateUpAxis = true;
 
-            // --- FIX NA TELEPORTACJÊ 0,0,0 ---
-
-            // Krok A: Jeœli jesteœmy serwerem (State Authority), to my decydujemy o pozycji
+            // --- KLUCZOWA POPRAWKA RUCHU ---
             if (Object.HasStateAuthority)
             {
-                // Wy³¹czamy agenta, ¿eby nie "walczy³"
-                _agent.enabled = false;
-
-                // Upewniamy siê, ¿e pozycja fizyczna jest taka jak spawnu
-                // (Fusion ju¿ to ustawi³ przy spawnie, ale dla pewnoœci)
-                transform.position = transform.position;
-
-                // W³¹czamy agenta
+                // Jesteœmy SERWEREM (Dino-Host lub Operator-Host):
+                // My zarz¹dzamy ruchem. W³¹czamy Agenta.
                 _agent.enabled = true;
 
-                // KLUCZOWE: Warp() informuje wewnêtrzny system nawigacji "Jesteœ TUTAJ, zaakceptuj to"
-                bool warped = _agent.Warp(transform.position);
-
-                if (warped)
-                {
-                    Debug.Log($"Dron zespawnowany poprawnie na: {transform.position}");
-                }
-                else
-                {
-                    Debug.LogError($"Dron nie móg³ znaleŸæ NavMesha w pozycji {transform.position}! Czy spawn point na pewno dotyka niebieskiej siatki?");
-                }
+                // Fix na startow¹ pozycjê (Warp)
+                _agent.Warp(transform.position);
             }
             else
             {
-                // Jeœli jesteœmy Klientem (nie serwerem), wy³¹czamy NavMeshAgenta ca³kowicie.
-                // Klient ma tylko widzieæ drona tam, gdzie ka¿e NetworkTransform.
-                // Jeœli tego nie zrobisz, Agent u Klienta te¿ bêdzie próbowa³ ustawiaæ pozycjê i bêdzie szarpaæ.
+                // Jesteœmy KLIENTEM (Operator-Klient):
+                // Nie mamy prawa decydowaæ o ruchu. Wy³¹czamy Agenta ca³kowicie.
+                // Bêdziemy tylko odbieraæ pozycjê przez NetworkTransform.
                 _agent.enabled = false;
             }
         }
     }
 
-    // Funkcja ruchu - wywo³ywana przez serwer
+    // Funkcja ruchu
     public void MoveToPosition(Vector3 targetPos)
     {
-        if (Object.HasStateAuthority && _agent != null)
+        // Tylko Serwer ma w³¹czonego agenta, wiêc tylko on wykona ten kod
+        if (Object.HasStateAuthority && _agent != null && _agent.isOnNavMesh)
         {
             _agent.SetDestination(targetPos);
         }
     }
 
-    // Funkcja zrzutu bomby
+    // --- POPRAWKA BOMBY ---
     public void TryDropBomb()
     {
-        // Tylko w³aœciciel drona (Operator) mo¿e to wywo³aæ
-        if (Object.HasInputAuthority)
+        // Przypadek 1: Jestem Hostem (mam w³adzê absolutn¹)
+        if (Object.HasStateAuthority)
         {
-            RPC_DropBomb();
+            DropBombInternal(); // Robiê to natychmiast, bez RPC
+        }
+        // Przypadek 2: Jestem Klientem (mam w³adzê nad wejœciem)
+        else if (Object.HasInputAuthority)
+        {
+            RPC_DropBomb(); // Wysy³am proœbê do serwera
         }
     }
 
-    // Helper dla UI - czy bomba gotowa?
-    public bool IsBombReady => BombCooldown.ExpiredOrNotRunning(Runner);
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_DropBomb()
+    // Wewnêtrzna logika zrzutu (wspólna dla RPC i Hosta)
+    private void DropBombInternal()
     {
         if (BombCooldown.ExpiredOrNotRunning(Runner))
         {
-            // Reset licznika
             BombCooldown = TickTimer.CreateFromSeconds(Runner, cooldownTime);
-
-            // Spawn bomby
             if (bombSpawnPoint != null)
             {
                 Runner.Spawn(bombPrefab, bombSpawnPoint.position, Quaternion.identity);
@@ -115,15 +95,19 @@ public class DroneController : NetworkBehaviour, IDamageable
         }
     }
 
-    // Obs³uga obra¿eñ od Dinozaura
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_DropBomb()
+    {
+        // Serwer odbiera proœbê i wykonuje zrzut
+        DropBombInternal();
+    }
+
+    public bool IsBombReady => BombCooldown.ExpiredOrNotRunning(Runner);
+
     public void TakeDamage(int amount)
     {
         if (!Object.HasStateAuthority) return;
-
         CurrentHP -= amount;
-        if (CurrentHP <= 0)
-        {
-            Runner.Despawn(Object);
-        }
+        if (CurrentHP <= 0) Runner.Despawn(Object);
     }
 }
