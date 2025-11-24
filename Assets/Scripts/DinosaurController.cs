@@ -106,7 +106,13 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         }
     }
 
- 
+    private void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.K))
+        {
+            TakeDamage(15);
+        }
+    }
 
     void OnDestroy()
     {
