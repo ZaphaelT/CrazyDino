@@ -12726,7 +12726,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9d2be0809da17049ad8d21b2cb2fd4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _agent: {fileID: 6908243445228819609}
   maxHp: 100
+  expValue: 25
   patrolPoints:
   - {fileID: 0}
   - {fileID: 0}

@@ -102,7 +102,8 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkPrefabRef _operatorPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
-    [SerializeField] private Transform[] spawnPoints; 
+    [SerializeField] private Transform dinoSpawnPoint;
+    [SerializeField] private Transform operatorSpawnPoint;
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
@@ -111,20 +112,36 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             int playerIndex = _spawnedCharacters.Count;
-            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab;
 
-            Vector3 spawnPosition = (spawnPoints != null && playerIndex < spawnPoints.Length)
-                ? spawnPoints[playerIndex].position
-                : new Vector3(playerIndex * 3, 1, 0);
+            // wybór prefabów (dostosuj jeœli chcesz innej logiki)
+            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab; // tu zmieniamy kto jest pierwszy 0=operator,1=dino
 
-            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, Quaternion.identity, player);
+            Vector3 spawnPosition;
+            int spawnIndex = prefab.Equals(_operatorPrefab) ? 1 : 0;
+
+            // wybierz przypisany punkt zgodnie z typem (0=dino,1=operator)
+            Transform selectedPoint = (spawnIndex == 1) ? operatorSpawnPoint : dinoSpawnPoint;
+
+            if (selectedPoint == null)
+            {
+                Debug.LogWarning($"Spawn point at index {spawnIndex} is null. Falling back to default position.");
+                spawnPosition = new Vector3(playerIndex * 3, 1, 0);
+            }
+            else
+            {
+                spawnPosition = selectedPoint.position;
+                Debug.Log($"Spawning player {player} at spawnIndex={spawnIndex} position={spawnPosition}");
+            }
+
+            Quaternion spawnRotation = (selectedPoint != null) ? selectedPoint.rotation : Quaternion.identity;
+            NetworkObject networkPlayerObject = runner.Spawn(prefab, spawnPosition, spawnRotation, player);
 
             if (networkPlayerObject != null)
             {
-
                 networkPlayerObject.name = $"Player_Obj_Player{player.RawEncoded}";
                 _spawnedCharacters.Add(player, networkPlayerObject);
-                Debug.Log($"Spawned: player={player} Prefab={(playerIndex==0? "Operator":"Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
+                // POPRAWKA: u¿ywamy prefab, nie playerIndex, by opisaæ który prefab zosta³ spawnniêty
+                Debug.Log($"Spawned: player={player} Prefab={(prefab.Equals(_operatorPrefab) ? "Operator" : "Dino")} Id={networkPlayerObject.Id} InputAuthority={networkPlayerObject.InputAuthority} HasStateAuthority={networkPlayerObject.HasStateAuthority}");
             }
             else
             {

@@ -3,22 +3,17 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Pteranodon : NetworkBehaviour, IDamageable
+public class Pteranodon : EnemyDino
 {
-    private Animator _animator;
-    private NavMeshAgent _agent;
 
-    [Networked, OnChangedRender(nameof(OnIsWalkingChanged))]
-    private bool IsWalking { get; set; }
+    private bool IsWalking = false;
 
-    [Networked, OnChangedRender(nameof(OnIsDeadChanged))]
-    private bool IsDead { get; set; }
 
     [Networked]
-    private int Hp { get; set; }
+    private Vector3 NetworkedPosition { get; set; }
 
-    [SerializeField]
-    private int maxHp = 100;
+    [Networked]
+    private Quaternion NetworkedRotation { get; set; }
 
     [Header("Patrol")]
     [SerializeField]
@@ -52,7 +47,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
                 _agent.isStopped = false;
                 _currentPatrolIndex = 0;
                 _agent.SetDestination(patrolPoints[_currentPatrolIndex].position);
-                IsWalking = true;
+                SetWalkingState(true);
             }
         }
     }
@@ -62,9 +57,21 @@ public class Pteranodon : NetworkBehaviour, IDamageable
         if (!Object || !Object.IsValid)
             return;
 
-        if (!Object.HasStateAuthority)
-            return;
+        if (Object.HasStateAuthority)
+        {
+            HandlePatrolAndMovement();
+            NetworkedPosition = transform.position;
+            NetworkedRotation = transform.rotation;
+        }
+        else
+        {
+            transform.position = NetworkedPosition;
+            transform.rotation = NetworkedRotation;
+        }
+    }
 
+    private void HandlePatrolAndMovement()
+    {
         if (IsDead)
         {
             if (_agent != null && !_agent.isStopped)
@@ -73,7 +80,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
             }
 
             if (IsWalking)
-                IsWalking = false;
+                SetWalkingState(false);
 
             return;
         }
@@ -81,7 +88,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
         if (_agent == null || patrolPoints == null || patrolPoints.Length == 0)
         {
             if (IsWalking)
-                IsWalking = false;
+                SetWalkingState(false);
 
             return;
         }
@@ -94,7 +101,7 @@ public class Pteranodon : NetworkBehaviour, IDamageable
         bool isMoving = !_agent.pathPending && _agent.remainingDistance > Mathf.Max(_agent.stoppingDistance, acceptDistance);
 
         if (IsWalking != isMoving)
-            IsWalking = isMoving;
+            SetWalkingState(isMoving);
 
         if (!_agent.pathPending && _agent.remainingDistance <= Mathf.Max(_agent.stoppingDistance, acceptDistance))
         {
@@ -103,50 +110,18 @@ public class Pteranodon : NetworkBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(int amount)
+    private void SetWalkingState(bool walking)
     {
-        if (!Object.HasStateAuthority || IsDead)
-            return;
-
-        Hp -= amount;
-
-        if (Hp <= 0)
-        {
-            Hp = 0;
-            IsDead = true;
-
-            if (_agent != null)
-                _agent.isStopped = true;
-        }
-        else
-        {
-            RPC_PlayTakeDamage();
-
-        }
+        IsWalking = walking;
+        RPC_SetWalkingState(walking);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_PlayTakeDamage()
+    private void RPC_SetWalkingState(bool walking)
     {
         if (_animator != null)
-            _animator.SetTrigger("TakeDamage");
+            _animator.SetBool("isWalking", walking);
     }
 
-    private void OnIsWalkingChanged()
-    {
-        if (_animator != null)
-            _animator.SetBool("isWalking", IsWalking);
-    }
 
-    private void OnIsDeadChanged()
-    {
-        if (_animator != null)
-            _animator.SetTrigger("Death");
-    }
-
-    public void OnDeathAnimationEnd()
-    {
-        if (Object.HasStateAuthority)
-            Runner.Despawn(Object);
-    }
 }
