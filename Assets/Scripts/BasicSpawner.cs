@@ -114,7 +114,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
             int playerIndex = _spawnedCharacters.Count;
 
             // wybór prefabów (dostosuj jeœli chcesz innej logiki)
-            NetworkPrefabRef prefab = (playerIndex == 0) ? _operatorPrefab : _dinosaurPrefab; // tu zmieniamy kto jest pierwszy 0=operator,1=dino
+            NetworkPrefabRef prefab = (playerIndex == 1) ? _operatorPrefab : _dinosaurPrefab; // tu zmieniamy kto jest pierwszy 0=operator,1=dino
 
             Vector3 spawnPosition;
             int spawnIndex = prefab.Equals(_operatorPrefab) ? 1 : 0;
