@@ -23728,7 +23728,7 @@ Animator:
   m_GameObject: {fileID: 8979464058811374243}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: a539d6b3fa2a32744bc49081446524d8, type: 2}
+  m_Controller: {fileID: 9100000, guid: 4e46d2f53314eab49b4796680ed24937, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -36259,13 +36259,15 @@ MonoBehaviour:
   _agent: {fileID: 6908243445355114191}
   maxHp: 100
   expValue: 25
+  attackRange: 10
+  attackCooldown: 3
+  attackDamage: 20
+  detectionRange: 35
   patrolPoints:
   - {fileID: 67192091}
   - {fileID: 773642997}
   - {fileID: 712011887}
-  acceptDistance: 0.5
   autoStartPatrol: 1
-  playerDetectDistance: 30
 --- !u!4 &8982666418448820127
 Transform:
   m_ObjectHideFlags: 0
