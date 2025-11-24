@@ -5,9 +5,11 @@ using UnityEngine.AI;
 public class Ankylo : EnemyDino
 {
     [Header("Walka")]
-    [SerializeField] private float attackRange = 2.5f;     
-    [SerializeField] private float attackCooldown = 3.0f;  
+    [SerializeField] private float attackRange = 2.5f;
+    [SerializeField] private float attackCooldown = 3.0f;
     [SerializeField] private int attackDamage = 15;
+
+    [SerializeField] private float damageDelay = 0.5f;
 
     [Header("Agro")]
     [SerializeField] private float detectionRange = 15.0f;
@@ -16,9 +18,13 @@ public class Ankylo : EnemyDino
     [SerializeField] private Transform[] patrolPoints;
     [SerializeField] private bool autoStartPatrol = true;
 
-    private float _attackTimer = 0f;
+    // Zmienne wewnêtrzne
+    private float _attackCooldownTimer = 0f; 
     private int _currentPatrolIndex = 0;
     private Transform _playerTransform;
+
+    private TickTimer _damageDelayTimer;
+    private bool _isDamagePending = false; 
 
     [Networked] private bool IsWalking { get; set; }
     [Networked] private Vector3 NetworkedPosition { get; set; }
@@ -52,6 +58,25 @@ public class Ankylo : EnemyDino
         }
     }
 
+    public override void FixedUpdateNetwork()
+    {
+        if (!Object.HasStateAuthority) return;
+
+        if (_isDamagePending)
+        {
+            if (_damageDelayTimer.Expired(Runner))
+            {
+                DealDelayedDamage(); 
+                _isDamagePending = false; 
+            }
+        }
+
+        _attackCooldownTimer += Runner.DeltaTime;
+
+        NetworkedPosition = transform.position;
+        NetworkedRotation = transform.rotation;
+    }
+
     void Update()
     {
         if (!Object || !Object.IsValid) return;
@@ -64,8 +89,6 @@ public class Ankylo : EnemyDino
 
         if (Object.HasStateAuthority)
         {
-            _attackTimer += Time.deltaTime;
-
             float distanceToPlayer = 999f;
             if (_playerTransform != null)
             {
@@ -79,12 +102,13 @@ public class Ankylo : EnemyDino
 
                 RotateTowards(_playerTransform.position);
 
-                if (_attackTimer >= attackCooldown)
+                if (_attackCooldownTimer >= attackCooldown && !_isDamagePending)
                 {
-                    PerformAttack();
+                    StartAttackSequence();
                 }
             }
-            else if (distanceToPlayer <= detectionRange)
+
+            else if (distanceToPlayer <= detectionRange && !_isDamagePending)
             {
                 if (_agent != null)
                 {
@@ -93,13 +117,10 @@ public class Ankylo : EnemyDino
                 }
                 IsWalking = true;
             }
-            else
+            else if (!_isDamagePending) 
             {
                 HandlePatrol();
             }
-
-            NetworkedPosition = transform.position;
-            NetworkedRotation = transform.rotation;
         }
         else
         {
@@ -108,24 +129,29 @@ public class Ankylo : EnemyDino
         }
     }
 
-    private void PerformAttack()
+    private void StartAttackSequence()
     {
-        _attackTimer = 0f;
+        _attackCooldownTimer = 0f; 
 
-        if (_playerTransform != null)
-        {
-
-
-            var dmg = _playerTransform.GetComponent<IDamageable>();
-
-            if (dmg != null)
-            {
-                dmg.TakeDamage(attackDamage);
-            }
-        }
+        _damageDelayTimer = TickTimer.CreateFromSeconds(Runner, damageDelay);
+        _isDamagePending = true;
 
         RPC_PlayAttackAnimation();
     }
+
+    private void DealDelayedDamage()
+    {
+        if (_playerTransform == null) return;
+
+        if (_playerTransform.gameObject == gameObject) return;
+
+        var dmg = _playerTransform.GetComponent<IDamageable>();
+        if (dmg != null)
+        {
+            dmg.TakeDamage(attackDamage);
+        }
+    }
+
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_PlayAttackAnimation()
     {
