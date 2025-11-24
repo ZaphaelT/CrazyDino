@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-public class DinosaurController : NetworkBehaviour
+public class DinosaurController : NetworkBehaviour, IDamageable
 {
     public static DinosaurController Instance { get; private set; }
 
@@ -16,8 +16,6 @@ public class DinosaurController : NetworkBehaviour
     private NetworkCharacterController _cc;
     private Animator _animator;
 
-
-
     [SerializeField] private Camera playerCamera;
 
     private bool _isLocal;
@@ -27,23 +25,28 @@ public class DinosaurController : NetworkBehaviour
 
     [Networked] private bool IsRunning { get; set; }
     [Networked] private bool IsAttacking { get; set; }
+    [Networked] public float CurrentHealth { get; set; }
+
     private float _attackAnimDuration = 0.7f;
     private float _attackTimer = 0f;
 
     [SerializeField] private float attackRadius = 2.0f;
-
     [SerializeField] private LayerMask attackLayerMask;
+
     [Header("Stats to upgrade")]
     [SerializeField] private int attackDamage = 10;
     [SerializeField] private int _hp = 10;
     [SerializeField] private float _speed;
 
-
-
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
         _animator = GetComponent<Animator>();
+
+        if (Object.HasStateAuthority)
+        {
+            CurrentHealth = _hp;
+        }
 
         if (_cc != null)
             _speed = _cc.maxSpeed;
@@ -80,6 +83,14 @@ public class DinosaurController : NetworkBehaviour
         }
     }
 
+    public override void Render()
+    {
+        if (_isLocal && PlayerDinoHP.Instance != null)
+        {
+            PlayerDinoHP.Instance.UpdatePlayerHealth(CurrentHealth, _hp);
+        }
+    }
+
     void LateUpdate()
     {
         if (_isLocal && playerCamera != null)
@@ -94,6 +105,8 @@ public class DinosaurController : NetworkBehaviour
             _animator.SetBool("isAttacking", IsAttacking);
         }
     }
+
+ 
 
     void OnDestroy()
     {
@@ -157,10 +170,19 @@ public class DinosaurController : NetworkBehaviour
         foreach (var hit in hits)
         {
             var damageable = hit.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (damageable != null && damageable != (IDamageable)this)
             {
                 damageable.TakeDamage(attackDamage);
             }
+        }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (Object.HasStateAuthority)
+        {
+            CurrentHealth -= damage;
+            if (CurrentHealth < 0) CurrentHealth = 0;
         }
     }
 
@@ -187,6 +209,7 @@ public class DinosaurController : NetworkBehaviour
         _speed *= multiplier;
         attackDamage = Mathf.RoundToInt(attackDamage * multiplier);
         _hp = Mathf.RoundToInt(_hp * multiplier);
+        CurrentHealth = _hp;
 
         if (_cc != null)
             _cc.maxSpeed = _speed;
