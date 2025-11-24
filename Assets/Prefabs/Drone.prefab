@@ -233,7 +233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHP: 30
   moveSpeed: 8
-  flightHeight: 3
+  flightHeight: 8
   bombPrefab:
     RawGuidValue: b4942d2d559f02847b2c6cf9cefd6d69
   bombSpawnPoint: {fileID: 4152678311893605222}
