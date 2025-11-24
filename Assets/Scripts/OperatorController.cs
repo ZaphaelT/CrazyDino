@@ -1,11 +1,11 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI; // Dodane do obs³ugi przycisków mobilnych
+using UnityEngine.UI; // Potrzebne do obs³ugi przycisków
 
 public class OperatorController : NetworkBehaviour
 {
-    // --- TWOJE ISTNIEJ¥CE ZMIENNE KAMERY ---
+    // --- ORYGINALNE USTAWIENIA KAMERY ---
     [Header("Camera")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private float panSpeed = 10f;
@@ -14,19 +14,19 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private float deadzone = 0.08f;
 
     [Header("Movement")]
-    [SerializeField] private bool useCameraRelativeMovement = false;
-    [SerializeField] private float smoothSpeed = 8f;
+    [SerializeField] private bool useCameraRelativeMovement = false; // false = world-space
+    [SerializeField] private float smoothSpeed = 8f;                 // wiêksza wartoœæ = szybsze wyg³adzanie
 
     [Header("Optional bounds (XZ)")]
     [SerializeField] private bool useBounds = false;
     [SerializeField] private Vector2 minXZ = new Vector2(-50, -50);
     [SerializeField] private Vector2 maxXZ = new Vector2(50, 50);
 
-    // --- NOWE ZMIENNE DLA DRONA I UI ---
+    // --- NOWE USTAWIENIA DRONA I UI ---
     [Header("Drone System")]
     [SerializeField] private NetworkPrefabRef dronePrefab;
-    [SerializeField] private Transform droneSpawnPoint; // Punkt w bazie/fortecy
-    [SerializeField] private LayerMask groundLayer;     // Warstwa pod³ogi (do klikania "idŸ tam")
+    [SerializeField] private Transform droneSpawnPoint;
+    [SerializeField] private LayerMask groundLayer;
 
     [Header("Mobile UI")]
     [SerializeField] private GameObject uiCanvasRoot;
@@ -42,24 +42,26 @@ public class OperatorController : NetworkBehaviour
     private Transform _cameraTransform;
     private Vector2 _cameraInput = Vector2.zero;
 
-    // Referencja do naszego drona (¿eby wiedzieæ czym sterowaæ)
-    private DroneController _myDrone;
+    // To jest kluczowa zmienna - referencja do drona, którym sterujemy
+    private DroneController _controlledDrone;
 
     [SerializeField] private bool debugForceLocalInEditor = false;
 
     public override void Spawned()
     {
-        // --- TWOJA LOGIKA KAMERY ---
         _isLocal = Object.HasInputAuthority;
 
+        // --- SETUP KAMERY (Oryginalny + poprawki) ---
         if (playerCamera == null)
             playerCamera = GetComponentInChildren<Camera>(true);
 
-        if (playerCamera == null) return;
+        if (playerCamera == null)
+            return;
 
         _cameraTransform = playerCamera.transform;
         _cameraIsRoot = (playerCamera.gameObject == this.gameObject);
 
+        // Konfiguracja dla lokalnego gracza (Operatora)
         if (_isLocal || (debugForceLocalInEditor && Application.isEditor))
         {
             if (!_cameraIsRoot)
@@ -79,148 +81,31 @@ public class OperatorController : NetworkBehaviour
             if (playerCamera.TryGetComponent<AudioListener>(out var audio))
                 audio.enabled = true;
 
+            // W³¹czamy UI
             if (uiCanvasRoot != null) uiCanvasRoot.SetActive(true);
-            // --- NOWA LOGIKA: PODPIÊCIE PRZYCISKÓW UI ---
-            // Podpinamy funkcje tylko jeœli to nasz lokalny gracz
+
+            // Podpinamy przyciski
             if (spawnDroneButton) spawnDroneButton.onClick.AddListener(OnSpawnClick);
             if (moveDroneButton) moveDroneButton.onClick.AddListener(OnMoveClick);
             if (dropBombButton) dropBombButton.onClick.AddListener(OnBombClick);
         }
         else
         {
+            // Wy³¹czamy wszystko dla innych graczy
             playerCamera.gameObject.SetActive(false);
             if (uiCanvasRoot != null) uiCanvasRoot.SetActive(false);
-
-            // Ukrywamy UI dla gracza, który nie jest operatorem (np. dla Dinozaura)
-            if (spawnDroneButton) spawnDroneButton.gameObject.SetActive(false);
-            if (moveDroneButton) moveDroneButton.gameObject.SetActive(false);
-            if (dropBombButton) dropBombButton.gameObject.SetActive(false);
         }
 
+        // --- SZUKANIE BAZY DRONA (FIX DLA PREFABU) ---
         if (droneSpawnPoint == null)
         {
-            GameObject foundBase = GameObject.FindGameObjectWithTag("DroneBase");
-            if (foundBase != null)
-            {
-                droneSpawnPoint = foundBase.transform;
-            }
-            else
-            {
-                // Tylko serwer musi to wiedzieæ, ¿eby zespawnowaæ drona, ale warto logowaæ b³¹d
-                if (Object.HasStateAuthority)
-                {
-                    Debug.LogError("B£¥D: Nie znaleziono obiektu z tagiem 'DroneBase' na scenie!");
-                }
-            }
-        }
-    }
-
-    // --- NOWA METODA UPDATE (DLA UI) ---
-    void Update()
-    {
-        // Tylko lokalny gracz zarz¹dza swoim UI
-        if (!_isLocal && !(debugForceLocalInEditor && Application.isEditor)) return;
-
-        // Sprawdzamy czy mamy drona (obiekt istnieje i nie zosta³ zniszczony)
-        bool hasDrone = _myDrone != null && _myDrone.Object != null && _myDrone.Object.IsValid;
-
-        // Zarz¹dzanie aktywnoœci¹ przycisków
-        if (spawnDroneButton) spawnDroneButton.interactable = !hasDrone; // Mo¿na spawnowaæ tylko jak NIE ma drona
-        if (moveDroneButton) moveDroneButton.interactable = hasDrone;    // Mo¿na ruszaæ tylko jak JEST dron
-
-        if (dropBombButton)
-        {
-            // Mo¿na zrzuciæ bombê jak jest dron I cooldown min¹³
-            dropBombButton.interactable = hasDrone && _myDrone.IsBombReady;
-        }
-    }
-
-    // --- OBS£UGA PRZYCISKÓW (FUNKCJE LOKALNE) ---
-
-    private void OnSpawnClick()
-    {
-        RPC_RequestSpawnDrone();
-    }
-
-    private void OnMoveClick()
-    {
-        if (_myDrone == null || playerCamera == null) return;
-
-        // Strzelamy promieniem ze œrodka ekranu (celownika kamery)
-        Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-        RaycastHit hit;
-
-        // Sprawdzamy czy trafiliœmy w pod³ogê (groundLayer)
-        if (Physics.Raycast(ray, out hit, 1000f, groundLayer))
-        {
-            // Jeœli tak, wysy³amy rozkaz do serwera
-            RPC_OrderMove(hit.point);
-        }
-    }
-
-    private void OnBombClick()
-    {
-        if (_myDrone != null)
-        {
-            _myDrone.TryDropBomb();
-        }
-    }
-
-    // --- LOGIKA SIECIOWA (RPC) ---
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_RequestSpawnDrone(RpcInfo info = default)
-    {
-        // ZABEZPIECZENIE: Sprawdzamy czy punkt startu zosta³ znaleziony
-        if (droneSpawnPoint == null)
-        {
-            Debug.LogError("B£¥D KRYTYCZNY: Serwer nie wie gdzie zespawnowaæ drona! droneSpawnPoint jest null.");
-
-            // Próba ratunkowa - szukamy jeszcze raz na serwerze
             var found = GameObject.FindGameObjectWithTag("DroneBase");
             if (found != null)
             {
                 droneSpawnPoint = found.transform;
-                Debug.Log("Uff... Serwer znalaz³ bazê w ostatniej chwili.");
-            }
-            else
-            {
-                Debug.LogError("Nie znaleziono obiektu z tagiem 'DroneBase' na scenie!");
-                return;
             }
         }
-
-        if (_myDrone != null && _myDrone.Object != null && _myDrone.Object.IsValid)
-        {
-            Debug.Log("Dron ju¿ istnieje, nie spawnuje drugiego.");
-            return;
-        }
-
-        Debug.Log($"Spawnujê drona w pozycji: {droneSpawnPoint.position}");
-
-        NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
-        droneObj.AssignInputAuthority(info.Source);
-        DroneController droneScript = droneObj.GetComponent<DroneController>();
-
-        RPC_SetLocalDroneRef(droneScript);
     }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
-    private void RPC_SetLocalDroneRef(DroneController drone)
-    {
-        _myDrone = drone;
-    }
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_OrderMove(Vector3 target)
-    {
-        if (_myDrone != null)
-        {
-            _myDrone.MoveToPosition(target);
-        }
-    }
-
-    // --- RESZTA TWOJEGO KODU (BEZ ZMIAN) ---
 
     private void OnEnable()
     {
@@ -236,6 +121,19 @@ public class OperatorController : NetworkBehaviour
             _controls.Player.Disable();
     }
 
+    // --- ZARZ¥DZANIE STANEM UI ---
+    void Update()
+    {
+        if (!_isLocal) return;
+
+        bool hasDrone = _controlledDrone != null && _controlledDrone.Object != null && _controlledDrone.Object.IsValid;
+
+        if (spawnDroneButton) spawnDroneButton.interactable = !hasDrone;
+        if (moveDroneButton) moveDroneButton.interactable = hasDrone;
+        if (dropBombButton) dropBombButton.interactable = hasDrone && _controlledDrone.IsBombReady;
+    }
+
+    // --- INPUT SIECIOWY ---
     public override void FixedUpdateNetwork()
     {
         if (GetInput(out NetworkInputData data))
@@ -244,6 +142,7 @@ public class OperatorController : NetworkBehaviour
         }
     }
 
+    // --- PE£NA LOGIKA RUCHU KAMERY (TWÓJ ORYGINALNY KOD) ---
     void LateUpdate()
     {
         bool localControl = Object.HasInputAuthority || (debugForceLocalInEditor && Application.isEditor);
@@ -266,16 +165,22 @@ public class OperatorController : NetworkBehaviour
             }
             else
             {
+                // world-space movement (X,Z)
                 move = new Vector3(stick.x, 0f, stick.y);
             }
 
+            // oblicz prêdkoœæ (jednostki na sekundê)
             Vector3 velocity = move * panSpeed;
+
+            // docelowa pozycja w tym kroku
             Vector3 stepTarget = camT.position + velocity * Time.deltaTime;
             stepTarget.y = camT.position.y;
 
+            // stabilne wyg³adzanie niezale¿ne od FPS
             float alpha = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
             camT.position = Vector3.Lerp(camT.position, stepTarget, alpha);
 
+            // przyciêcie pozycji (bounds)
             if (useBounds)
             {
                 camT.position = new Vector3(
@@ -286,8 +191,86 @@ public class OperatorController : NetworkBehaviour
             }
         }
 
+        // Utrzymuj sta³y pitch i bie¿¹cy yaw
         float yaw = camT.rotation.eulerAngles.y;
         camT.rotation = Quaternion.Euler(initialPitch, yaw, 0f);
+    }
+
+    // --- OBS£UGA UI (KLIKNIÊCIA) ---
+
+    private void OnSpawnClick()
+    {
+        RPC_RequestSpawnDrone();
+    }
+
+    private void OnMoveClick()
+    {
+        if (_controlledDrone == null || playerCamera == null) return;
+
+        // Raycast ze œrodka ekranu
+        Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
+        {
+            RPC_OrderMove(hit.point);
+        }
+    }
+
+    private void OnBombClick()
+    {
+        RPC_OrderDropBomb();
+    }
+
+    // --- LOGIKA SIECIOWA (RPCS) ---
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_RequestSpawnDrone(RpcInfo info = default)
+    {
+        // Sprawdzenie czy dron ju¿ istnieje
+        if (_controlledDrone != null && _controlledDrone.Object != null && _controlledDrone.Object.IsValid)
+            return;
+
+        if (droneSpawnPoint == null)
+        {
+            Debug.LogError("OperatorController: Nie znaleziono DroneSpawnPoint (SprawdŸ Tag 'DroneBase')");
+            return;
+        }
+
+        // Spawn drona
+        NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
+        DroneController droneScript = droneObj.GetComponent<DroneController>();
+
+        // 1. Zapisujemy drona u Siebie (na Serwerze) - TO BY£O KLUCZOWE
+        _controlledDrone = droneScript;
+
+        // 2. Wysy³amy informacjê do Klienta, ¿eby te¿ zapisa³ drona
+        RPC_SetLocalDroneRef(droneScript);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    private void RPC_SetLocalDroneRef(DroneController drone)
+    {
+        // To wykonuje siê u Klienta (Operatora)
+        _controlledDrone = drone;
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_OrderMove(Vector3 target)
+    {
+        // Serwer otrzymuje rozkaz i przekazuje go dronowi
+        if (_controlledDrone != null)
+        {
+            _controlledDrone.Server_MoveTo(target);
+        }
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_OrderDropBomb()
+    {
+        // Serwer otrzymuje rozkaz zrzutu
+        if (_controlledDrone != null)
+        {
+            _controlledDrone.Server_DropBomb();
+        }
     }
 
     void OnDestroy()
@@ -310,9 +293,11 @@ public class OperatorController : NetworkBehaviour
     private void OnDrawGizmosSelected()
     {
         if (!useBounds) return;
+
         Gizmos.color = Color.cyan;
         Vector3 center = new Vector3((minXZ.x + maxXZ.x) * 0.5f, cameraHeight, (minXZ.y + maxXZ.y) * 0.5f);
         Vector3 size = new Vector3(Mathf.Abs(maxXZ.x - minXZ.x), 0.1f, Mathf.Abs(maxXZ.y - minXZ.y));
+
         Gizmos.DrawWireCube(center, size);
     }
 #endif

@@ -4,17 +4,17 @@ using UnityEngine.AI;
 
 public class DroneController : NetworkBehaviour, IDamageable
 {
-    [Header("Statystyki")]
+    [Header("Stats")]
     [SerializeField] private int maxHP = 30;
     [SerializeField] private float moveSpeed = 8f;
-    [SerializeField] private float flightHeight = 10.0f;
+    [SerializeField] private float flightHeight = 3.0f;
 
-    [Header("Bomba")]
+    [Header("Bomb")]
     [SerializeField] private NetworkPrefabRef bombPrefab;
     [SerializeField] private Transform bombSpawnPoint;
     [SerializeField] private float cooldownTime = 5f;
 
-    [Header("Setup")]
+    [Header("Visuals")]
     [SerializeField] private Transform visualModel;
 
     [Networked] private int CurrentHP { get; set; }
@@ -27,7 +27,7 @@ public class DroneController : NetworkBehaviour, IDamageable
         CurrentHP = maxHP;
         _agent = GetComponent<NavMeshAgent>();
 
-        // Ustawienie modelu wizualnego
+        // Model wizualny w górê
         if (visualModel != null)
             visualModel.localPosition = new Vector3(0, flightHeight, 0);
 
@@ -37,53 +37,32 @@ public class DroneController : NetworkBehaviour, IDamageable
             _agent.updateRotation = true;
             _agent.updateUpAxis = true;
 
-            // --- KLUCZOWA POPRAWKA RUCHU ---
+            // TYLKO SERWER MO¯E U¯YWAÆ NAVMESHA
+            // Dziêki temu Klient nie walczy o pozycjê
             if (Object.HasStateAuthority)
             {
-                // Jesteœmy SERWEREM (Dino-Host lub Operator-Host):
-                // My zarz¹dzamy ruchem. W³¹czamy Agenta.
                 _agent.enabled = true;
-
-                // Fix na startow¹ pozycjê (Warp)
+                // Fix na startow¹ pozycjê (zapobiega skokowi na 0,0,0)
                 _agent.Warp(transform.position);
             }
             else
             {
-                // Jesteœmy KLIENTEM (Operator-Klient):
-                // Nie mamy prawa decydowaæ o ruchu. Wy³¹czamy Agenta ca³kowicie.
-                // Bêdziemy tylko odbieraæ pozycjê przez NetworkTransform.
                 _agent.enabled = false;
             }
         }
     }
 
-    // Funkcja ruchu
-    public void MoveToPosition(Vector3 targetPos)
+    // Metoda wywo³ywana TYLKO przez Serwer (z OperatorController)
+    public void Server_MoveTo(Vector3 target)
     {
-        // Tylko Serwer ma w³¹czonego agenta, wiêc tylko on wykona ten kod
-        if (Object.HasStateAuthority && _agent != null && _agent.isOnNavMesh)
+        if (_agent != null && _agent.enabled)
         {
-            _agent.SetDestination(targetPos);
+            _agent.SetDestination(target);
         }
     }
 
-    // --- POPRAWKA BOMBY ---
-    public void TryDropBomb()
-    {
-        // Przypadek 1: Jestem Hostem (mam w³adzê absolutn¹)
-        if (Object.HasStateAuthority)
-        {
-            DropBombInternal(); // Robiê to natychmiast, bez RPC
-        }
-        // Przypadek 2: Jestem Klientem (mam w³adzê nad wejœciem)
-        else if (Object.HasInputAuthority)
-        {
-            RPC_DropBomb(); // Wysy³am proœbê do serwera
-        }
-    }
-
-    // Wewnêtrzna logika zrzutu (wspólna dla RPC i Hosta)
-    private void DropBombInternal()
+    // Metoda wywo³ywana TYLKO przez Serwer (z OperatorController)
+    public void Server_DropBomb()
     {
         if (BombCooldown.ExpiredOrNotRunning(Runner))
         {
@@ -95,19 +74,18 @@ public class DroneController : NetworkBehaviour, IDamageable
         }
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_DropBomb()
-    {
-        // Serwer odbiera proœbê i wykonuje zrzut
-        DropBombInternal();
-    }
-
+    // Helper dla UI
     public bool IsBombReady => BombCooldown.ExpiredOrNotRunning(Runner);
 
     public void TakeDamage(int amount)
     {
-        if (!Object.HasStateAuthority) return;
-        CurrentHP -= amount;
-        if (CurrentHP <= 0) Runner.Despawn(Object);
+        if (Object.HasStateAuthority)
+        {
+            CurrentHP -= amount;
+            if (CurrentHP <= 0)
+            {
+                Runner.Despawn(Object);
+            }
+        }
     }
 }
