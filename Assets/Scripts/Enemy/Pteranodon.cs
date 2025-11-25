@@ -57,6 +57,9 @@ public class Pteranodon : EnemyDino
         if (!Object || !Object.IsValid)
             return;
 
+        if (IsDead) return;
+
+
         if (Object.HasStateAuthority)
         {
             HandlePatrolAndMovement();
