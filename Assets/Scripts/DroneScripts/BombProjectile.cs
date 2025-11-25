@@ -1,27 +1,38 @@
-using UnityEngine;
 using Fusion;
+using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class BombProjectile : NetworkBehaviour
 {
-    [SerializeField] private float fallSpeed = 20f;
+    [Header("Ustawienia")]
     [SerializeField] private int damage = 15;
     [SerializeField] private float explosionRadius = 4f;
-    [SerializeField] private LayerMask hitLayers; // Zaznacz: Default (ziemia) i warstwê Dina
-    [SerializeField] private GameObject explosionEffect; // Opcjonalny prefab wybuchu
+    [SerializeField] private LayerMask hitLayers;
+    [SerializeField] private GameObject explosionEffect;
 
-    public override void FixedUpdateNetwork()
+    private NetworkId _ownerId;
+
+    public override void Spawned()
     {
-        // Prosta symulacja spadania w dó³
-        transform.position += Vector3.down * fallSpeed * Runner.DeltaTime;
     }
 
-    // Wykrycie uderzenia (musi byæ IsTrigger w Colliderze bomby)
+    public void SetOwner(NetworkId id)
+    {
+        _ownerId = id;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        // Kolizje liczy tylko serwer
+        // 1. Tylko serwer liczy fizykê
         if (!Object.HasStateAuthority) return;
 
-        // Sprawdzamy czy trafiliœmy w coœ z dozwolonej warstwy (ziemia lub dino)
+
+        if (other.GetComponent<DroneController>() != null || other.GetComponentInParent<DroneController>() != null)
+        {
+            return;
+        }
+
+        // 3. Sprawdzamy warstwy (czy to Ziemia lub Dino)
         if (((1 << other.gameObject.layer) & hitLayers) != 0)
         {
             Explode();
@@ -30,24 +41,40 @@ public class BombProjectile : NetworkBehaviour
 
     private void Explode()
     {
-        // 1. Zadaj obra¿enia obszarowe
+        // Szukamy wszystkich ofiar w promieniu wybuchu
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, hitLayers);
+
         foreach (var hit in hits)
         {
-            var damageable = hit.GetComponent<IDamageable>();
-            if (damageable != null)
+            var damageable = hit.GetComponent<IDamageable>() ?? hit.GetComponentInParent<IDamageable>();
+            var droneCheck = hit.GetComponent<DroneController>() ?? hit.GetComponentInParent<DroneController>();
+
+            // Zadajemy obra¿enia TYLKO jeœli to nie jest Dron
+            // (Chyba ¿e chcesz, ¿eby dron móg³ oberwaæ od fali uderzeniowej jak leci nisko - wtedy usuñ drug¹ czêœæ warunku)
+            if (damageable != null && droneCheck == null)
             {
                 damageable.TakeDamage(damage);
             }
         }
 
-        // 2. Efekt wizualny (spawn sieciowy)
+        // --- SPAWN EFEKTU I DESPAWN BOMBY ---
+
+        // Zabezpieczenie przed czerwonym b³êdem "No NetworkObject"
         if (explosionEffect != null)
         {
-            Runner.Spawn(explosionEffect, transform.position, Quaternion.identity);
+            // Jeœli prefab ma NetworkObject -> Spawnujemy przez sieæ
+            if (explosionEffect.GetComponent<NetworkObject>() != null)
+            {
+                Runner.Spawn(explosionEffect, transform.position, Quaternion.identity);
+            }
+            // Jeœli to zwyk³y Particle System bez NetworkObject -> Spawnujemy lokalnie (mniej bezpieczne, ale dzia³a)
+            else
+            {
+                Instantiate(explosionEffect, transform.position, Quaternion.identity);
+            }
         }
 
-        // 3. Zniszcz bombê
+        // Niszczymy bombê
         Runner.Despawn(Object);
     }
 }

@@ -213,8 +213,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHP: 30
-  moveSpeed: 8
-  flightHeight: 11
+  moveSpeed: 15
+  flightHeight: 20
   bombPrefab:
     RawGuidValue: b4942d2d559f02847b2c6cf9cefd6d69
   bombSpawnPoint: {fileID: 4152678311893605222}
@@ -371,7 +371,7 @@ Transform:
   m_GameObject: {fileID: 6738941632950787788}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.53, z: 0}
+  m_LocalPosition: {x: 0, y: -2.86, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
