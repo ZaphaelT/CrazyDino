@@ -124,12 +124,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9269d1fcf5e14684193625e5a28b4ee3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fallSpeed: 20
   damage: 15
   explosionRadius: 4
   hitLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 257
   explosionEffect: {fileID: 4188875290539969543, guid: bbc057169e128ed48895ec0e5ff7d16c, type: 3}
 --- !u!54 &61044252080720176
 Rigidbody:
