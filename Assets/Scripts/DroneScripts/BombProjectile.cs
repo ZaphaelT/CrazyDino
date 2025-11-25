@@ -1,27 +1,31 @@
-using UnityEngine;
 using Fusion;
+using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class BombProjectile : NetworkBehaviour
 {
-    [SerializeField] private float fallSpeed = 20f;
     [SerializeField] private int damage = 15;
     [SerializeField] private float explosionRadius = 4f;
-    [SerializeField] private LayerMask hitLayers; // Zaznacz: Default (ziemia) i warstwê Dina
-    [SerializeField] private GameObject explosionEffect; // Opcjonalny prefab wybuchu
+    [SerializeField] private LayerMask hitLayers;
+    [SerializeField] private GameObject explosionEffect;
 
-    public override void FixedUpdateNetwork()
+    public override void Spawned()
     {
-        // Prosta symulacja spadania w dó³
-        transform.position += Vector3.down * fallSpeed * Runner.DeltaTime;
     }
 
-    // Wykrycie uderzenia (musi byæ IsTrigger w Colliderze bomby)
     private void OnTriggerEnter(Collider other)
     {
-        // Kolizje liczy tylko serwer
+        // Tylko serwer liczy wybuchy
         if (!Object.HasStateAuthority) return;
 
-        // Sprawdzamy czy trafiliœmy w coœ z dozwolonej warstwy (ziemia lub dino)
+        // Debug: Poka¿ w co uderzyliœmy (jeœli nie dzia³a, odkomentuj liniê ni¿ej)
+        Debug.Log($"Bomba dotknê³a: {other.gameObject.name} na warstwie {other.gameObject.layer}");
+
+        if (other.GetComponent<DroneController>() != null)
+        {
+            return;
+        }
+        // Sprawdzamy czy warstwa obiektu pasuje do naszej maski
         if (((1 << other.gameObject.layer) & hitLayers) != 0)
         {
             Explode();
@@ -30,7 +34,7 @@ public class BombProjectile : NetworkBehaviour
 
     private void Explode()
     {
-        // 1. Zadaj obra¿enia obszarowe
+        // Zadaj obra¿enia
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, hitLayers);
         foreach (var hit in hits)
         {
@@ -41,13 +45,13 @@ public class BombProjectile : NetworkBehaviour
             }
         }
 
-        // 2. Efekt wizualny (spawn sieciowy)
+        // Efekt wizualny
         if (explosionEffect != null)
         {
             Runner.Spawn(explosionEffect, transform.position, Quaternion.identity);
         }
 
-        // 3. Zniszcz bombê
+        // Zniszcz bombê
         Runner.Despawn(Object);
     }
 }
