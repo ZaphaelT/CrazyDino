@@ -135,7 +135,7 @@ GameObject:
   - component: {fileID: 4889603627424709229}
   - component: {fileID: 7827702992661882669}
   - component: {fileID: 1395480373378461489}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Drone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -214,7 +214,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHP: 30
   moveSpeed: 15
-  flightHeight: 20
+  flightHeight: 8
   bombPrefab:
     RawGuidValue: b4942d2d559f02847b2c6cf9cefd6d69
   bombSpawnPoint: {fileID: 4152678311893605222}
@@ -250,14 +250,14 @@ BoxCollider:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 12.521087, y: 5.694982, z: 11.149994}
-  m_Center: {x: -0.07321215, y: 0.6581042, z: -1.6552906}
+  m_Size: {x: 18.479105, y: 8.884062, z: 20.359795}
+  m_Center: {x: -1.0007277, y: 2.2526445, z: -2.2021613}
 --- !u!1 &5510206065565379089
 GameObject:
   m_ObjectHideFlags: 0
