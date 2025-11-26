@@ -38,6 +38,11 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     [SerializeField] private int _hp = 10;
     [SerializeField] private float _speed;
 
+    private float deadzone = 0.08f; // Dodaj pole
+
+    private Vector3 _smoothedVelocity = Vector3.zero;
+    private float smoothSpeed = 8f; // Mo¿esz ustawiæ przez [SerializeField]
+
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
@@ -133,19 +138,23 @@ public class DinosaurController : NetworkBehaviour, IDamageable
 
         if (GetInput(out NetworkInputData data))
         {
-            var inputDir = data.direction;
-            if (inputDir.sqrMagnitude > 0f)
+            var inputDir = new Vector2(data.direction.x, data.direction.z);
+            if (inputDir.sqrMagnitude > deadzone * deadzone)
             {
                 var dirNormalized = inputDir.normalized;
-                desiredVelocity = dirNormalized * _speed;
+                desiredVelocity = new Vector3(dirNormalized.x, 0, dirNormalized.y) * _speed;
                 isRunning = true;
             }
         }
 
+        // Wyg³adzanie ruchu
+        float alpha = 1f - Mathf.Exp(-smoothSpeed * Runner.DeltaTime);
+        _smoothedVelocity = Vector3.Lerp(_smoothedVelocity, desiredVelocity, alpha);
+
         if (_cc != null)
-            _cc.Move(desiredVelocity);
+            _cc.Move(_smoothedVelocity);
         else
-            transform.position += desiredVelocity * Runner.DeltaTime;
+            transform.position += _smoothedVelocity * Runner.DeltaTime;
 
         IsRunning = isRunning;
 
@@ -189,6 +198,16 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         {
             CurrentHealth -= damage;
             if (CurrentHealth < 0) CurrentHealth = 0;
+
+            if (CurrentHealth == 0)
+            {
+                if (Object.HasInputAuthority && GameEndScreenController.Instance != null)
+                    GameEndScreenController.Instance.ShowLose();
+
+                var operatorController = OperatorController.Instance;
+                if (operatorController != null && operatorController.Object.HasInputAuthority && GameEndScreenController.Instance != null)
+                    GameEndScreenController.Instance.ShowWin();
+            }
         }
     }
 
