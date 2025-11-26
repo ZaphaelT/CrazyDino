@@ -62,6 +62,9 @@ public class Ankylo : EnemyDino
     {
         if (!Object.HasStateAuthority) return;
 
+                if (IsDead) return;
+
+
         if (_isDamagePending)
         {
             if (_damageDelayTimer.Expired(Runner))
@@ -80,6 +83,9 @@ public class Ankylo : EnemyDino
     void Update()
     {
         if (!Object || !Object.IsValid) return;
+
+        if (IsDead) return;
+
 
         if (_playerTransform == null && DinosaurController.Instance != null)
             _playerTransform = DinosaurController.Instance.transform;

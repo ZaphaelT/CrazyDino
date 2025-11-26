@@ -5,6 +5,8 @@ using UnityEngine.UI; // Potrzebne do obs³ugi przycisków
 
 public class OperatorController : NetworkBehaviour
 {
+    public static OperatorController Instance { get; private set; }
+
     // --- ORYGINALNE USTAWIENIA KAMERY ---
     [Header("Camera")]
     [SerializeField] private Camera playerCamera;
@@ -46,6 +48,11 @@ public class OperatorController : NetworkBehaviour
     private DroneController _controlledDrone;
 
     [SerializeField] private bool debugForceLocalInEditor = false;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     public override void Spawned()
     {
@@ -287,6 +294,12 @@ public class OperatorController : NetworkBehaviour
             if (playerCamera.TryGetComponent<AudioListener>(out var audio))
                 audio.enabled = false;
         }
+    }
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_ShowWinScreen()
+    {
+        if (GameEndScreenController.Instance != null)
+            GameEndScreenController.Instance.ShowWin();
     }
 
 #if UNITY_EDITOR

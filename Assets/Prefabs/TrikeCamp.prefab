@@ -1774,6 +1774,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _agent: {fileID: 6975801121365487119}
+  _collider: {fileID: 0}
+  _IsDead: 0
   maxHp: 100
   expValue: 25
   attackRange: 10
@@ -1798,7 +1800,7 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 3286472095
+  SortKey: 1768762067
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
@@ -2252,6 +2254,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8173781768168545151}
+  - component: {fileID: 5472948555014386826}
+  - component: {fileID: 5559791195871448764}
   m_Layer: 0
   m_Name: TrikeCamp
   m_TagString: Untagged
@@ -2277,6 +2281,40 @@ Transform:
   - {fileID: 461456627253038603}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5472948555014386826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5511249722322839072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41b08e0f5a2b7f7488a71c8d45cfb388, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myDino: {fileID: 4518684159220555680}
+  respawnTime: 60
+--- !u!114 &5559791195871448764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5511249722322839072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 412208867
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects:
+  - {fileID: 5198977932853442753}
+  NetworkedBehaviours:
+  - {fileID: 5472948555014386826}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &5697615705931564345
 GameObject:
   m_ObjectHideFlags: 0
