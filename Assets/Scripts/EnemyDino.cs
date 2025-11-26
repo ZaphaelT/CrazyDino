@@ -45,18 +45,23 @@ public class EnemyDino : NetworkBehaviour, IDamageable
             if (IsDead)
             {
                 // ŒMIERÆ:
-                // 1. Najpierw wy³¹czamy agenta, ¿eby Ankylo przesta³ nim sterowaæ
                 if (_agent != null) _agent.enabled = false;
-
-                // 2. Wy³¹czamy kolizje
                 if (_collider != null) _collider.enabled = false;
-
-                // 3. Animacja
                 if (_animator != null && _animator.gameObject.activeInHierarchy)
                     _animator.SetTrigger("Death");
             }
-            // (Respawn wizualny obs³u¿ony w Respawn())
-
+            else
+            {
+                // RESPAWN (dodaj to!)
+                SetVisualsActive(true);
+                if (_agent != null) _agent.enabled = true;
+                if (_collider != null) _collider.enabled = true;
+                if (_animator != null)
+                {
+                    _animator.Rebind();
+                    _animator.Update(0f);
+                }
+            }
             _lastDeadState = IsDead;
         }
     }
