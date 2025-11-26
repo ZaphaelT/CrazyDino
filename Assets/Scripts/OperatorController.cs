@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI; // Potrzebne do obs³ugi przycisków
 
-public class OperatorController : NetworkBehaviour, IDamageable
+public class OperatorController : NetworkBehaviour
 {
     public static OperatorController Instance { get; private set; }
 
@@ -308,24 +308,7 @@ public class OperatorController : NetworkBehaviour, IDamageable
         if (GameEndScreenController.Instance != null)
             GameEndScreenController.Instance.ShowWin();
     }
-    public void TakeDamage(int damage)
-    {
-        if (Object.HasStateAuthority)
-        {
-            CurrentHealth -= damage;
-            if (CurrentHealth < 0) CurrentHealth = 0;
 
-            if (CurrentHealth == 0)
-            {
-                if (Object.HasInputAuthority && GameEndScreenController.Instance != null)
-                    GameEndScreenController.Instance.ShowLose();
-
-                var operatorController = OperatorController.Instance;
-                if (operatorController != null)
-                    operatorController.RPC_ShowWinScreen();
-            }
-        }
-    }
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
