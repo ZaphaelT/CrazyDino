@@ -64,6 +64,11 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
+  droneMaterials:
+  - {fileID: 2100000, guid: d026daf606e73cb43b4405e5fbec2f84, type: 2}
+  - {fileID: 2100000, guid: d31f026bfa688d041ad34fd8c1d0aa91, type: 2}
+  - {fileID: 2100000, guid: 90ad00c8817b2f74b9c3e127a13a7bb4, type: 2}
+  materialTargetSlot: 2
   uiCanvasRoot: {fileID: 4668992704784563232}
   droneSlots:
   - {fileID: 6146795934290350614}

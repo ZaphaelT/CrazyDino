@@ -88,4 +88,29 @@ public class DroneController : NetworkBehaviour, IDamageable
             }
         }
     }
+
+    public void ApplyMaterialToVisual(Material materialToAssign, int targetSlot)
+    {
+        if (materialToAssign == null)
+            return;
+
+        Transform root = visualModel != null ? visualModel : transform;
+        var renderers = root.GetComponentsInChildren<Renderer>(true);
+
+        foreach (var r in renderers)
+        {
+            var mats = r.sharedMaterials;
+            if (mats == null || mats.Length == 0)
+                continue;
+
+            if (targetSlot >= 0 && targetSlot < mats.Length)
+            {
+                Material[] newMats = new Material[mats.Length];
+                for (int i = 0; i < mats.Length; i++) newMats[i] = mats[i];
+                newMats[targetSlot] = materialToAssign;
+
+                r.materials = newMats;
+            }
+        }
+    }
 }

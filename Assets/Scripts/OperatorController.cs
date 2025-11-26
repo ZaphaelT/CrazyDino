@@ -30,6 +30,10 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private Transform droneSpawnPoint;
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("Drone visuals")]
+    [SerializeField] private Material[] droneMaterials;
+    [SerializeField] private int materialTargetSlot = 2;
+
     [Header("Mobile UI")]
     [SerializeField] private GameObject uiCanvasRoot;
     [SerializeField] private DroneSlotUI[] droneSlots; // trzy sloty ustaw w Inspectorze
@@ -311,6 +315,9 @@ public class OperatorController : NetworkBehaviour
 
         // wysy³amy informacjê do klienta (InputAuthority) aby zapisa³ referencjê lokalnie
         RPC_SetLocalDroneRef(droneScript, slot);
+
+        int matIndex = Mathf.Clamp(slot, 0, (droneMaterials != null ? droneMaterials.Length - 1 : 0));
+        RPC_SetDroneMaterial(droneScript, matIndex);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
@@ -338,6 +345,22 @@ public class OperatorController : NetworkBehaviour
         {
             _controlledDrones[slot].Server_DropBomb();
         }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_SetDroneMaterial(DroneController drone, int materialIndex)
+    {
+        if (drone == null) return;
+        if (droneMaterials == null || droneMaterials.Length == 0) return;
+
+        int matIdx = Mathf.Clamp(materialIndex, 0, droneMaterials.Length - 1);
+        Material matToAssign = droneMaterials[matIdx];
+        if (matToAssign == null) return;
+
+        int targetSlot = Mathf.Max(0, materialTargetSlot);
+
+        // U¿yjemy metody na DroneController, ¿eby nie odwo³ywaæ siê do prywatnych pól z zewn¹trz
+        drone.ApplyMaterialToVisual(matToAssign, targetSlot);
     }
 
     void OnDestroy()
