@@ -866,9 +866,9 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -3846018093981099296, guid: dfd5419e5ac24e045832ad9068d3ec33, type: 3}
-  - {fileID: -6478536213147159724, guid: dfd5419e5ac24e045832ad9068d3ec33, type: 3}
-  - {fileID: -6922793697723135513, guid: dfd5419e5ac24e045832ad9068d3ec33, type: 3}
+  - {fileID: 2100000, guid: 16734d5eb38635d44934ccc524390d10, type: 2}
+  - {fileID: 2100000, guid: f5f557b10bec47e4193e820b4ccbe60d, type: 2}
+  - {fileID: 2100000, guid: f5f557b10bec47e4193e820b4ccbe60d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1301,7 +1301,7 @@ GameObject:
   - component: {fileID: 8114252057065949843}
   - component: {fileID: 2873278129695804349}
   - component: {fileID: 8770520327341120243}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ankylo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1364,7 +1364,7 @@ MonoBehaviour:
   _collider: {fileID: 8114252057065949843}
   _IsDead: 0
   maxHp: 100
-  expValue: 50
+  expValue: 100
   attackRange: 15
   attackCooldown: 3
   attackDamage: 20
@@ -1394,8 +1394,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.47, y: 3.374998, z: 3.16}
-  m_Center: {x: 0.28800964, y: 1.187499, z: 0.9527674}
+  m_Size: {x: 2.617981, y: 3.374998, z: 4.6830673}
+  m_Center: {x: 0.08416748, y: 1.187499, z: 1.2085686}
 --- !u!195 &2873278129695804349
 NavMeshAgent:
   m_ObjectHideFlags: 0
