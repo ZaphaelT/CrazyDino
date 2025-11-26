@@ -1707,7 +1707,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -30.323097, y: 26.999495, z: -69.99826}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1179731685054089509}
@@ -1774,10 +1774,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _agent: {fileID: 6975801121365487119}
-  _collider: {fileID: 0}
+  _collider: {fileID: 995558666275214690}
   _IsDead: 0
   maxHp: 100
-  expValue: 25
+  expValue: 50
   attackRange: 10
   attackCooldown: 3
   attackDamage: 20

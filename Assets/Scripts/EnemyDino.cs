@@ -6,7 +6,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 {
     protected Animator _animator;
     [SerializeField] protected NavMeshAgent _agent;
-    [SerializeField] private Collider _collider;
+    [SerializeField] private BoxCollider _collider;
 
     [Networked] public bool IsDead { get; set; }
     [Networked] protected int Hp { get; set; }
@@ -20,7 +20,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
     {
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
-        if (_collider == null) _collider = GetComponent<Collider>();
+        if (_collider == null) _collider = GetComponent<BoxCollider>();
 
         _lastDeadState = IsDead;
 
