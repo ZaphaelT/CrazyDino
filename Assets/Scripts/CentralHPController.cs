@@ -27,12 +27,14 @@ public class CentralHPController : NetworkBehaviour, IDamageable
         // Przegrana operatora, wygrana dinozaura
         if (CurrentHP == 0)
         {
-            if (Object.HasInputAuthority && GameEndScreenController.Instance != null)
-                GameEndScreenController.Instance.ShowLose();
-
+    
             var dinoController = DinosaurController.Instance;
             if (dinoController != null)
                 dinoController.RPC_ShowWinScreen();
+
+            var operatorController = OperatorController.Instance;
+            if (operatorController != null)
+                operatorController.RPC_ShowLoseScreen();
         }
     }
 }

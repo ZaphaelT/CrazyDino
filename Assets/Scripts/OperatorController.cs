@@ -309,6 +309,13 @@ public class OperatorController : NetworkBehaviour
             GameEndScreenController.Instance.ShowWin();
     }
 
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_ShowLoseScreen()
+    {
+        if (GameEndScreenController.Instance != null)
+            GameEndScreenController.Instance.ShowLose();
+    }
+
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
