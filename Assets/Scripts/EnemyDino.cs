@@ -24,7 +24,6 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         _lastDeadState = IsDead;
 
-        // Ustaw stan pocz¹tkowy
         if (IsDead)
         {
             SetVisualsActive(false);
@@ -44,7 +43,6 @@ public class EnemyDino : NetworkBehaviour, IDamageable
         {
             if (IsDead)
             {
-                // ŒMIERÆ:
                 if (_agent != null) _agent.enabled = false;
                 if (_collider != null) _collider.enabled = false;
                 if (_animator != null && _animator.gameObject.activeInHierarchy)
@@ -52,7 +50,6 @@ public class EnemyDino : NetworkBehaviour, IDamageable
             }
             else
             {
-                // RESPAWN (dodaj to!)
                 SetVisualsActive(true);
                 if (_agent != null) _agent.enabled = true;
                 if (_collider != null) _collider.enabled = true;
@@ -72,13 +69,11 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         Hp = maxHp;
 
-        // ODRODZENIE (Kolejnoœæ krytyczna dla NavMesha!)
         if (_agent != null)
         {
-            _agent.enabled = true; // 1. W³¹czamy komponent
-            _agent.Warp(position); // 2. Przenosimy na NavMesh
+            _agent.enabled = true; 
+            _agent.Warp(position); 
 
-            // 3. Resetujemy parametry TYLKO jeœli agent jest aktywny i na siatce
             if (_agent.isOnNavMesh)
             {
                 _agent.isStopped = false;
@@ -93,9 +88,8 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         if (_collider != null) _collider.enabled = true;
 
-        IsDead = false; // To zsynchronizuje klientów
+        IsDead = false; 
 
-        // Wymuszamy grafikê od razu na serwerze
         SetVisualsActive(true);
         if (_animator != null)
         {
