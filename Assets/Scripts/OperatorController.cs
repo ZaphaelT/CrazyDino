@@ -30,9 +30,13 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private Transform droneSpawnPoint;
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("Drone visuals")]
+    [SerializeField] private Material[] droneMaterials;
+    [SerializeField] private int materialTargetSlot = 2;
+
     [Header("Mobile UI")]
     [SerializeField] private GameObject uiCanvasRoot;
-    [SerializeField] private Button spawnDroneButton;
+    [SerializeField] private DroneSlotUI[] droneSlots; // trzy sloty ustaw w Inspectorze
     [SerializeField] private Button moveDroneButton;
     [SerializeField] private Button dropBombButton;
 
@@ -45,8 +49,9 @@ public class OperatorController : NetworkBehaviour
     private Vector2 _cameraInput = Vector2.zero;
     [Networked] public float CurrentHealth { get; set; }
 
-    // To jest kluczowa zmienna - referencja do drona, którym sterujemy
-    private DroneController _controlledDrone;
+    private DroneController[] _controlledDrones = new DroneController[3];
+    private int _selectedSlot = 0;
+
     [SerializeField] private int _hp = 100;
 
     [SerializeField] private bool debugForceLocalInEditor = false;
@@ -98,10 +103,25 @@ public class OperatorController : NetworkBehaviour
             // W³¹czamy UI
             if (uiCanvasRoot != null) uiCanvasRoot.SetActive(true);
 
-            // Podpinamy przyciski
-            if (spawnDroneButton) spawnDroneButton.onClick.AddListener(OnSpawnClick);
-            if (moveDroneButton) moveDroneButton.onClick.AddListener(OnMoveClick);
-            if (dropBombButton) dropBombButton.onClick.AddListener(OnBombClick);
+            // Podpinamy sloty UI (jeœli s¹)
+            if (droneSlots != null && droneSlots.Length > 0)
+            {
+                for (int i = 0; i < droneSlots.Length; i++)
+                {
+                    var slot = droneSlots[i];
+                    slot.slotIndex = i;
+                    slot.OnSelected += OnSlotSelected;
+                    slot.OnSpawnRequested += OnSlotSpawnRequested;
+                }
+
+                // ustaw domyœlne zaznaczenie
+                _selectedSlot = Mathf.Clamp(_selectedSlot, 0, droneSlots.Length - 1);
+                UpdateSlotVisuals();
+            }
+            else
+            {
+                Debug.LogWarning("OperatorController: droneSlots nie ustawione w Inspectorze.");
+            }
         }
         else
         {
@@ -140,11 +160,38 @@ public class OperatorController : NetworkBehaviour
     {
         if (!_isLocal) return;
 
-        bool hasDrone = _controlledDrone != null && _controlledDrone.Object != null && _controlledDrone.Object.IsValid;
+        // Aktualizuj interakcje przycisków dla ka¿dego slotu
+        for (int i = 0; i < _controlledDrones.Length; i++)
+        {
+            bool hasDrone = (_controlledDrones[i] != null && _controlledDrones[i].Object != null && _controlledDrones[i].Object.IsValid);
+            if (droneSlots != null && i < droneSlots.Length)
+            {
+                droneSlots[i].SetSpawnInteractable(!hasDrone);
+                // opcjonalnie zaktualizuj HP w UI jeœli masz dostêp do CurrentHP (tu prosty placeholder)
+                if (hasDrone)
+                {
+                    // jeœli DroneController mia³by expose HP, mo¿esz tu ustawiæ pasek
+                    // droneSlots[i].SetHPFill( ... );
+                }
+            }
+        }
 
-        if (spawnDroneButton) spawnDroneButton.interactable = !hasDrone;
-        if (moveDroneButton) moveDroneButton.interactable = hasDrone;
-        if (dropBombButton) dropBombButton.interactable = hasDrone && _controlledDrone.IsBombReady;
+        bool selectedHasDrone = (_selectedSlot >= 0 && _selectedSlot < _controlledDrones.Length)
+            && (_controlledDrones[_selectedSlot] != null && _controlledDrones[_selectedSlot].Object != null && _controlledDrones[_selectedSlot].Object.IsValid);
+
+        if (moveDroneButton) moveDroneButton.interactable = selectedHasDrone;
+        if (dropBombButton) dropBombButton.interactable = selectedHasDrone && _controlledDrones[_selectedSlot].IsBombReady;
+
+        UpdateSlotVisuals();
+    }
+
+    private void UpdateSlotVisuals()
+    {
+        if (droneSlots == null) return;
+        for (int i = 0; i < droneSlots.Length; i++)
+        {
+            droneSlots[i].SetSelected(i == _selectedSlot);
+        }
     }
 
     // --- INPUT SIECIOWY ---
@@ -211,36 +258,46 @@ public class OperatorController : NetworkBehaviour
     }
 
     // --- OBS£UGA UI (KLIKNIÊCIA) ---
+    // Sloty wywo³uj¹ te metody przez eventy
 
-    private void OnSpawnClick()
+    private void OnSlotSelected(int slot)
     {
-        RPC_RequestSpawnDrone();
+        _selectedSlot = Mathf.Clamp(slot, 0, _controlledDrones.Length - 1);
+        UpdateSlotVisuals();
     }
 
-    private void OnMoveClick()
+    private void OnSlotSpawnRequested(int slot)
     {
-        if (_controlledDrone == null || playerCamera == null) return;
+        RPC_RequestSpawnDrone(slot);
+    }
 
-        // Raycast ze œrodka ekranu
+    public void OnMoveButtonClicked()
+    {
+        if (!_isLocal) return;
+        if (playerCamera == null) return;
+
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
         {
-            RPC_OrderMove(hit.point);
+            RPC_OrderMove(_selectedSlot, hit.point);
         }
     }
 
-    private void OnBombClick()
+    public void OnBombButtonClicked()
     {
-        RPC_OrderDropBomb();
+        if (!_isLocal) return;
+        RPC_OrderDropBomb(_selectedSlot);
     }
 
     // --- LOGIKA SIECIOWA (RPCS) ---
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_RequestSpawnDrone(RpcInfo info = default)
+    private void RPC_RequestSpawnDrone(int slot, RpcInfo info = default)
     {
-        // Sprawdzenie czy dron ju¿ istnieje
-        if (_controlledDrone != null && _controlledDrone.Object != null && _controlledDrone.Object.IsValid)
+        // Sprawdzenie czy slot ju¿ ma drona
+        if (slot < 0 || slot >= _controlledDrones.Length) return;
+
+        if (_controlledDrones[slot] != null && _controlledDrones[slot].Object != null && _controlledDrones[slot].Object.IsValid)
             return;
 
         if (droneSpawnPoint == null)
@@ -249,42 +306,61 @@ public class OperatorController : NetworkBehaviour
             return;
         }
 
-        // Spawn drona
+        // Spawn drona (na serwerze)
         NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
         DroneController droneScript = droneObj.GetComponent<DroneController>();
 
-        // 1. Zapisujemy drona u Siebie (na Serwerze) - TO BY£O KLUCZOWE
-        _controlledDrone = droneScript;
+        // zapisujemy drona serwer-side w odpowiednim slocie
+        _controlledDrones[slot] = droneScript;
 
-        // 2. Wysy³amy informacjê do Klienta, ¿eby te¿ zapisa³ drona
-        RPC_SetLocalDroneRef(droneScript);
+        // wysy³amy informacjê do klienta (InputAuthority) aby zapisa³ referencjê lokalnie
+        RPC_SetLocalDroneRef(droneScript, slot);
+
+        int matIndex = Mathf.Clamp(slot, 0, (droneMaterials != null ? droneMaterials.Length - 1 : 0));
+        RPC_SetDroneMaterial(droneScript, matIndex);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
-    private void RPC_SetLocalDroneRef(DroneController drone)
+    private void RPC_SetLocalDroneRef(DroneController drone, int slot)
     {
-        // To wykonuje siê u Klienta (Operatora)
-        _controlledDrone = drone;
+        if (slot < 0 || slot >= _controlledDrones.Length) return;
+        _controlledDrones[slot] = drone;
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_OrderMove(Vector3 target)
+    private void RPC_OrderMove(int slot, Vector3 target)
     {
-        // Serwer otrzymuje rozkaz i przekazuje go dronowi
-        if (_controlledDrone != null)
+        if (slot < 0 || slot >= _controlledDrones.Length) return;
+        if (_controlledDrones[slot] != null)
         {
-            _controlledDrone.Server_MoveTo(target);
+            _controlledDrones[slot].Server_MoveTo(target);
         }
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_OrderDropBomb()
+    private void RPC_OrderDropBomb(int slot)
     {
-        // Serwer otrzymuje rozkaz zrzutu
-        if (_controlledDrone != null)
+        if (slot < 0 || slot >= _controlledDrones.Length) return;
+        if (_controlledDrones[slot] != null)
         {
-            _controlledDrone.Server_DropBomb();
+            _controlledDrones[slot].Server_DropBomb();
         }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_SetDroneMaterial(DroneController drone, int materialIndex)
+    {
+        if (drone == null) return;
+        if (droneMaterials == null || droneMaterials.Length == 0) return;
+
+        int matIdx = Mathf.Clamp(materialIndex, 0, droneMaterials.Length - 1);
+        Material matToAssign = droneMaterials[matIdx];
+        if (matToAssign == null) return;
+
+        int targetSlot = Mathf.Max(0, materialTargetSlot);
+
+        // U¿yjemy metody na DroneController, ¿eby nie odwo³ywaæ siê do prywatnych pól z zewn¹trz
+        drone.ApplyMaterialToVisual(matToAssign, targetSlot);
     }
 
     void OnDestroy()
@@ -300,6 +376,20 @@ public class OperatorController : NetworkBehaviour
         {
             if (playerCamera.TryGetComponent<AudioListener>(out var audio))
                 audio.enabled = false;
+        }
+
+        // odwi¹¿ eventy UI
+        if (droneSlots != null)
+        {
+            for (int i = 0; i < droneSlots.Length; i++)
+            {
+                var slot = droneSlots[i];
+                if (slot != null)
+                {
+                    slot.OnSelected -= OnSlotSelected;
+                    slot.OnSpawnRequested -= OnSlotSpawnRequested;
+                }
+            }
         }
     }
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
