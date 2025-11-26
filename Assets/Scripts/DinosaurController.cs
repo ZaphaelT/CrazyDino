@@ -147,14 +147,10 @@ public class DinosaurController : NetworkBehaviour, IDamageable
             }
         }
 
-        // Wyg³adzanie ruchu
-        float alpha = 1f - Mathf.Exp(-smoothSpeed * Runner.DeltaTime);
-        _smoothedVelocity = Vector3.Lerp(_smoothedVelocity, desiredVelocity, alpha);
-
         if (_cc != null)
-            _cc.Move(_smoothedVelocity);
+            _cc.Move(desiredVelocity);
         else
-            transform.position += _smoothedVelocity * Runner.DeltaTime;
+            transform.position += desiredVelocity * Runner.DeltaTime;
 
         IsRunning = isRunning;
 
