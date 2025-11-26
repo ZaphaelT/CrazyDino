@@ -17,6 +17,7 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     private Animator _animator;
 
     [SerializeField] private Camera playerCamera;
+    [SerializeField] private GameObject uiCanvasRoot;
 
     private bool _isLocal;
     private bool _cameraDetached;
@@ -85,6 +86,11 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         if (_isLocal)
         {
             DinoAttackButton.LocalDino = this;
+            if (uiCanvasRoot != null) uiCanvasRoot.SetActive(true);
+        }
+        else
+        {
+            if (uiCanvasRoot != null) uiCanvasRoot.SetActive(false);
         }
     }
 
