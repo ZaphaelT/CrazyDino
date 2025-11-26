@@ -646,18 +646,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1496276850}
     m_Modifications:
-    - target: {fileID: 5257352451400092104, guid: cd05cbc569bbae340a705b051bfd5309, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 16734d5eb38635d44934ccc524390d10, type: 2}
-    - target: {fileID: 5257352451400092104, guid: cd05cbc569bbae340a705b051bfd5309, type: 3}
-      propertyPath: 'm_Materials.Array.data[1]'
-      value: 
-      objectReference: {fileID: 2100000, guid: f5f557b10bec47e4193e820b4ccbe60d, type: 2}
-    - target: {fileID: 5257352451400092104, guid: cd05cbc569bbae340a705b051bfd5309, type: 3}
-      propertyPath: 'm_Materials.Array.data[2]'
-      value: 
-      objectReference: {fileID: 2100000, guid: f5f557b10bec47e4193e820b4ccbe60d, type: 2}
     - target: {fileID: 5511249722322839072, guid: cd05cbc569bbae340a705b051bfd5309, type: 3}
       propertyPath: m_Name
       value: AnkyloCamp1
