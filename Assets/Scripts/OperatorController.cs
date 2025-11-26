@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI; // Potrzebne do obs³ugi przycisków
 
-public class OperatorController : NetworkBehaviour
+public class OperatorController : NetworkBehaviour, IDamageable
 {
     public static OperatorController Instance { get; private set; }
 
@@ -43,9 +43,11 @@ public class OperatorController : NetworkBehaviour
     private bool _cameraIsRoot;
     private Transform _cameraTransform;
     private Vector2 _cameraInput = Vector2.zero;
+    [Networked] public float CurrentHealth { get; set; }
 
     // To jest kluczowa zmienna - referencja do drona, którym sterujemy
     private DroneController _controlledDrone;
+    [SerializeField] private int _hp = 100;
 
     [SerializeField] private bool debugForceLocalInEditor = false;
 
@@ -53,6 +55,11 @@ public class OperatorController : NetworkBehaviour
     {
         Instance = this;
     }
+    private void Start()
+    {
+        CurrentHealth = _hp;
+    }
+    
 
     public override void Spawned()
     {
@@ -300,6 +307,24 @@ public class OperatorController : NetworkBehaviour
     {
         if (GameEndScreenController.Instance != null)
             GameEndScreenController.Instance.ShowWin();
+    }
+    public void TakeDamage(int damage)
+    {
+        if (Object.HasStateAuthority)
+        {
+            CurrentHealth -= damage;
+            if (CurrentHealth < 0) CurrentHealth = 0;
+
+            if (CurrentHealth == 0)
+            {
+                if (Object.HasInputAuthority && GameEndScreenController.Instance != null)
+                    GameEndScreenController.Instance.ShowLose();
+
+                var operatorController = OperatorController.Instance;
+                if (operatorController != null)
+                    operatorController.RPC_ShowWinScreen();
+            }
+        }
     }
 
 #if UNITY_EDITOR

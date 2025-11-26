@@ -230,7 +230,12 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
         Gizmos.DrawWireSphere(center, attackRadius);
     }
-
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_ShowWinScreen()
+    {
+        if (GameEndScreenController.Instance != null)
+            GameEndScreenController.Instance.ShowWin();
+    }
     public void MultiplyStatsOnLevelUp(float multiplier)
     {
         _speed *= multiplier;
