@@ -295,6 +295,12 @@ public class OperatorController : NetworkBehaviour
                 audio.enabled = false;
         }
     }
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_ShowWinScreen()
+    {
+        if (GameEndScreenController.Instance != null)
+            GameEndScreenController.Instance.ShowWin();
+    }
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

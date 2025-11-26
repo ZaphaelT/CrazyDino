@@ -207,8 +207,8 @@ public class DinosaurController : NetworkBehaviour, IDamageable
                     GameEndScreenController.Instance.ShowLose();
 
                 var operatorController = OperatorController.Instance;
-                if (operatorController != null && operatorController.Object.HasInputAuthority && GameEndScreenController.Instance != null)
-                    GameEndScreenController.Instance.ShowWin();
+                if (operatorController != null)
+                    operatorController.RPC_ShowWinScreen();
             }
         }
     }
