@@ -65,7 +65,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
-  spawnCooldownTime: 5
+  spawnCooldownTime: 20
   droneMaterials:
   - {fileID: 2100000, guid: d026daf606e73cb43b4405e5fbec2f84, type: 2}
   - {fileID: 2100000, guid: d31f026bfa688d041ad34fd8c1d0aa91, type: 2}

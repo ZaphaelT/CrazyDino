@@ -218,7 +218,7 @@ MonoBehaviour:
   bombPrefab:
     RawGuidValue: b4942d2d559f02847b2c6cf9cefd6d69
   bombSpawnPoint: {fileID: 4152678311893605222}
-  cooldownTime: 5
+  cooldownTime: 20
   visualModel: {fileID: 7140547718283101005}
 --- !u!114 &7827702992661882669
 MonoBehaviour:
