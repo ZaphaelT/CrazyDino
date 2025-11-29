@@ -40,6 +40,8 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private Button moveDroneButton;
     [SerializeField] private Button dropBombButton;
 
+    [SerializeField] private Image bombCooldownImage;
+
     // --- ZMIENNE WEWNÊTRZNE ---
     private InputSystem_Actions _controls;
     private bool _isLocal;
@@ -160,25 +162,20 @@ public class OperatorController : NetworkBehaviour
     {
         if (!_isLocal) return;
 
-        // Aktualizuj interakcje przycisków dla ka¿dego slotu
         for (int i = 0; i < _controlledDrones.Length; i++)
         {
             bool hasDrone = (_controlledDrones[i] != null && _controlledDrones[i].Object != null && _controlledDrones[i].Object.IsValid);
             if (droneSlots != null && i < droneSlots.Length)
             {
                 droneSlots[i].SetSpawnInteractable(!hasDrone);
-                // opcjonalnie zaktualizuj HP w UI jeœli masz dostêp do CurrentHP (tu prosty placeholder)
                 if (hasDrone)
                 {
-                    // Pobieramy % ¿ycia z drona (0.0 do 1.0)
                     float healthPct = _controlledDrones[i].GetHealthPercentage();
 
-                    // Ustawiamy pasek w UI
                     droneSlots[i].SetHPFill(healthPct);
                 }
                 else
                 {
-                    // Jeœli drona nie ma, pasek na 0
                     droneSlots[i].SetHPFill(0f);
                 }
             }
@@ -188,7 +185,23 @@ public class OperatorController : NetworkBehaviour
             && (_controlledDrones[_selectedSlot] != null && _controlledDrones[_selectedSlot].Object != null && _controlledDrones[_selectedSlot].Object.IsValid);
 
         if (moveDroneButton) moveDroneButton.interactable = selectedHasDrone;
-        if (dropBombButton) dropBombButton.interactable = selectedHasDrone && _controlledDrones[_selectedSlot].IsBombReady;
+
+        if (selectedHasDrone)
+        {
+            var activeDrone = _controlledDrones[_selectedSlot];
+
+            if (dropBombButton) dropBombButton.interactable = activeDrone.IsBombReady;
+
+            if (bombCooldownImage != null)
+            {
+                bombCooldownImage.fillAmount = activeDrone.GetBombCooldownProgress();
+            }
+        }
+        else
+        {
+            if (dropBombButton) dropBombButton.interactable = false;
+            if (bombCooldownImage != null) bombCooldownImage.fillAmount = 1f;
+        }
 
         UpdateSlotVisuals();
     }

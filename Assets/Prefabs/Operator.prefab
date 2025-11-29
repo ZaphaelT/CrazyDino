@@ -76,6 +76,7 @@ MonoBehaviour:
   - {fileID: 5367329527099270238}
   moveDroneButton: {fileID: 245084664831310247}
   dropBombButton: {fileID: 2529010062216785955}
+  bombCooldownImage: {fileID: 808347536846074572}
   _CurrentHealth: 0
   _hp: 100
   debugForceLocalInEditor: 0
@@ -383,6 +384,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &808347536846074572 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4544878494528024120, guid: 20243fce71deeec479d0ae7b0e49dfa6, type: 3}
+  m_PrefabInstance: {fileID: 3757538263626292468}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &2386984781346113135 stripped
