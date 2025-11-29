@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; 
+using TMPro;
 
 public class DinoLevelingSystem : MonoBehaviour
 {
@@ -14,7 +14,11 @@ public class DinoLevelingSystem : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private Image expFillImage;
-    [SerializeField] private TextMeshProUGUI levelText; 
+    [SerializeField] private TextMeshProUGUI levelText;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource; 
+    [SerializeField] private AudioClip levelUpSound;  
 
     private int currentLevel = 1;
     private int currentExp = 0;
@@ -27,6 +31,8 @@ public class DinoLevelingSystem : MonoBehaviour
             Instance = this;
         else
             Destroy(gameObject);
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -53,10 +59,12 @@ public class DinoLevelingSystem : MonoBehaviour
         {
             currentExp -= expPerLevel;
             currentLevel++;
+
+            PlayLevelUpSound();
             OnLevelUp?.Invoke(currentLevel);
 
             if (DinosaurController.Instance != null)
-                DinosaurController.Instance.MultiplyStatsOnLevelUp(statsMultiplier); 
+                DinosaurController.Instance.MultiplyStatsOnLevelUp(statsMultiplier);
         }
 
         if (currentLevel >= maxLevel)
@@ -68,7 +76,14 @@ public class DinoLevelingSystem : MonoBehaviour
         UpdateUI();
     }
 
- 
+    private void PlayLevelUpSound()
+    {
+        if (audioSource != null && levelUpSound != null)
+        {
+            audioSource.PlayOneShot(levelUpSound);
+        }
+    }
+
     public void OnEnemyKilled(int expValue)
     {
         AwardExp(expValue);
@@ -84,7 +99,7 @@ public class DinoLevelingSystem : MonoBehaviour
         }
 
         if (levelText != null)
-            levelText.text = currentLevel+"";
+            levelText.text = currentLevel + "";
     }
 
     public int GetCurrentLevel() => currentLevel;
