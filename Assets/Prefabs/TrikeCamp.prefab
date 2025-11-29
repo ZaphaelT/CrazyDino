@@ -1777,14 +1777,15 @@ MonoBehaviour:
   _agent: {fileID: 6975801121365487119}
   _collider: {fileID: 995558666275214690}
   _audioSource: {fileID: 4577056464271688368}
-  hitSound: {fileID: 0}
+  takeDamageSound: {fileID: 8300000, guid: 4eb20f6045a841d4f8c36888db1ebdeb, type: 3}
   _IsDead: 0
   maxHp: 100
   expValue: 50
-  attackRange: 10
+  attackRange: 15
   attackCooldown: 3
   attackDamage: 20
   damageDelay: 0.5
+  attackSound: {fileID: 8300000, guid: 55df97a5447c1a649ad782a3bacb8573, type: 3}
   detectionRange: 35
   patrolPoints:
   - {fileID: 7064218581500654979}
@@ -1845,7 +1846,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.35
   m_Pitch: 1
   Loop: 0
   Mute: 0

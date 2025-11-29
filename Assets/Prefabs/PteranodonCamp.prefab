@@ -403,6 +403,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4882878784722702622}
     - target: {fileID: 5988165893461885080, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
+      propertyPath: takeDamageSound
+      value: 
+      objectReference: {fileID: 8300000, guid: 716d3f56b635bb54db419189c9411ed4, type: 3}
+    - target: {fileID: 5988165893461885080, guid: 26e44efc28b7ceb4d97652018082925b, type: 3}
       propertyPath: 'patrolPoints.Array.data[0]'
       value: 
       objectReference: {fileID: 8141929497033105728}
@@ -444,7 +448,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.35
   m_Pitch: 1
   Loop: 0
   Mute: 0

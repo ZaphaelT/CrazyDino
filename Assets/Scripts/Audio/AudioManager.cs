@@ -32,7 +32,7 @@ public class AudioManager : MonoBehaviour
         {
             musicSource.clip = backgroundMusic;
             musicSource.loop = true;  // Muzyka gra w kó³ko
-            musicSource.volume = 0.3f; // Ustaw g³oœnoœæ t³a
+            musicSource.volume = 0.15f; // Ustaw g³oœnoœæ t³a
             musicSource.Play();
         }
     }
