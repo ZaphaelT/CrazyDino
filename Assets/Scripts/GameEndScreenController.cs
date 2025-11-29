@@ -16,7 +16,8 @@ public class GameEndScreenController : MonoBehaviour
     public void ShowWin()
     {
         AudioListener.volume = 0f;
-
+        DinosaurController.Instance.uiCanvasRoot.SetActive(false);
+        OperatorController.Instance.uiCanvasRoot.SetActive(false);
         if (winScreen != null) winScreen.SetActive(true);
         if (loseScreen != null) loseScreen.SetActive(false);
     }
