@@ -89,6 +89,12 @@ public class DroneController : NetworkBehaviour, IDamageable
         }
     }
 
+    public float GetHealthPercentage()
+    {
+        if (maxHP <= 0) return 0f;
+        return (float)CurrentHP / (float)maxHP;
+    }
+
     public void ApplyMaterialToVisual(Material materialToAssign, int targetSlot)
     {
         if (materialToAssign == null)

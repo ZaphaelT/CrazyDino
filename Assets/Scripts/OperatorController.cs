@@ -170,8 +170,16 @@ public class OperatorController : NetworkBehaviour
                 // opcjonalnie zaktualizuj HP w UI jeœli masz dostêp do CurrentHP (tu prosty placeholder)
                 if (hasDrone)
                 {
-                    // jeœli DroneController mia³by expose HP, mo¿esz tu ustawiæ pasek
-                    // droneSlots[i].SetHPFill( ... );
+                    // Pobieramy % ¿ycia z drona (0.0 do 1.0)
+                    float healthPct = _controlledDrones[i].GetHealthPercentage();
+
+                    // Ustawiamy pasek w UI
+                    droneSlots[i].SetHPFill(healthPct);
+                }
+                else
+                {
+                    // Jeœli drona nie ma, pasek na 0
+                    droneSlots[i].SetHPFill(0f);
                 }
             }
         }

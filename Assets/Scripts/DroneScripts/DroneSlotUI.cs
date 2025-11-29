@@ -8,7 +8,7 @@ public class DroneSlotUI : MonoBehaviour
     public Button spawnButton;        // przycisk spawn
     public Button selectButton;       // klikany obrazek / ca³y slot
     public GameObject selectedHighlight; // obiekt pokazuj¹cy ¿e slot jest wybrany (np. ramka)
-    //public Image hpBar;               // pasek HP (opcjonalne)
+    public Image hpBar;               // pasek HP (opcjonalne)
 
     [HideInInspector] public int slotIndex;
 
@@ -56,9 +56,9 @@ public class DroneSlotUI : MonoBehaviour
             spawnButton.interactable = interactable;
     }
 
-    //public void SetHPFill(float fill)
-    //{
-    //    if (hpBar != null)
-    //        hpBar.fillAmount = Mathf.Clamp01(fill);
-    //}
+    public void SetHPFill(float fill)
+    {
+        if (hpBar != null)
+            hpBar.fillAmount = Mathf.Clamp01(fill);
+    }
 }

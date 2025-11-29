@@ -369,6 +369,7 @@ MonoBehaviour:
   spawnButton: {fileID: 6871444975519374440}
   selectButton: {fileID: 5375050598590907298}
   selectedHighlight: {fileID: 1400437138420237976}
+  hpBar: {fileID: 4128475108149212940}
   slotIndex: 0
 --- !u!1 &1057793271465144242
 GameObject:
@@ -1887,6 +1888,7 @@ MonoBehaviour:
   spawnButton: {fileID: 4349675088362065533}
   selectButton: {fileID: 986564646563603111}
   selectedHighlight: {fileID: 3350996483100386831}
+  hpBar: {fileID: 1557585642884918700}
   slotIndex: 0
 --- !u!1 &7202343494159803128
 GameObject:
@@ -2276,6 +2278,7 @@ MonoBehaviour:
   spawnButton: {fileID: 2971344175695445063}
   selectButton: {fileID: 3554507864661072516}
   selectedHighlight: {fileID: 7928725639216651414}
+  hpBar: {fileID: 8873461397305770710}
   slotIndex: 0
 --- !u!1 &8675081281382299174
 GameObject:
