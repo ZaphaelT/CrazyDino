@@ -5,10 +5,11 @@ using UnityEngine.UI;
 public class DroneSlotUI : MonoBehaviour
 {
     [Header("UI Elements")]
-    public Button spawnButton;        // przycisk spawn
-    public Button selectButton;       // klikany obrazek / ca³y slot
-    public GameObject selectedHighlight; // obiekt pokazuj¹cy ¿e slot jest wybrany (np. ramka)
-    public Image hpBar;               // pasek HP (opcjonalne)
+    public Button spawnButton;
+    public Button selectButton;
+    public GameObject selectedHighlight;
+    public Image hpBar;
+    public Image spawnCooldownOverlay;
 
     [HideInInspector] public int slotIndex;
 
@@ -60,5 +61,13 @@ public class DroneSlotUI : MonoBehaviour
     {
         if (hpBar != null)
             hpBar.fillAmount = Mathf.Clamp01(fill);
+    }
+
+    public void SetSpawnCooldown(float progress)
+    {
+        if (spawnCooldownOverlay != null)
+        {
+            spawnCooldownOverlay.fillAmount = progress;
+        }
     }
 }
