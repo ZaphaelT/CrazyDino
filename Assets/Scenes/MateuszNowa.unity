@@ -12634,14 +12634,6 @@ PrefabInstance:
       value: Turret PL
       objectReference: {fileID: 0}
     - target: {fileID: 5276772741191597306, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 8.854664
-      objectReference: {fileID: 0}
-    - target: {fileID: 5276772741191597306, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 8.854664
-      objectReference: {fileID: 0}
-    - target: {fileID: 5276772741191597306, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
       propertyPath: m_LocalPosition.x
       value: -84.6
       objectReference: {fileID: 0}
