@@ -29,6 +29,7 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private NetworkPrefabRef dronePrefab;
     [SerializeField] private Transform droneSpawnPoint;
     [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private float spawnCooldownTime = 5f;
 
     [Header("Drone visuals")]
     [SerializeField] private Material[] droneMaterials;
@@ -40,6 +41,8 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private Button moveDroneButton;
     [SerializeField] private Button dropBombButton;
 
+    [SerializeField] private Image bombCooldownImage;
+
     // --- ZMIENNE WEWNÊTRZNE ---
     private InputSystem_Actions _controls;
     private bool _isLocal;
@@ -50,6 +53,8 @@ public class OperatorController : NetworkBehaviour
     [Networked] public float CurrentHealth { get; set; }
 
     private DroneController[] _controlledDrones = new DroneController[3];
+    [Networked, Capacity(3)] private NetworkArray<TickTimer> SpawnTimers { get; }
+    private bool[] _wasSlotOccupied = new bool[3];
     private int _selectedSlot = 0;
 
     [SerializeField] private int _hp = 100;
@@ -141,6 +146,30 @@ public class OperatorController : NetworkBehaviour
         }
     }
 
+    public override void FixedUpdateNetwork()
+    {
+        if (GetInput(out NetworkInputData data))
+        {
+            _cameraInput = data.camera;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                bool hasDroneNow = _controlledDrones[i] != null && _controlledDrones[i].Object != null && _controlledDrones[i].Object.IsValid;
+
+                if (_wasSlotOccupied[i] && !hasDroneNow)
+                {
+                    SpawnTimers.Set(i, TickTimer.CreateFromSeconds(Runner, spawnCooldownTime));
+                    _controlledDrones[i] = null;
+                }
+
+                _wasSlotOccupied[i] = hasDroneNow;
+            }
+        }
+    }
+
     private void OnEnable()
     {
         if (_controls == null)
@@ -160,35 +189,66 @@ public class OperatorController : NetworkBehaviour
     {
         if (!_isLocal) return;
 
-        // Aktualizuj interakcje przycisków dla ka¿dego slotu
-        for (int i = 0; i < _controlledDrones.Length; i++)
+        // Aktualizacja UI (Sloty, HP, Cooldowny)
+        for (int i = 0; i < 3; i++)
         {
+            // Czy w slocie jest dron?
             bool hasDrone = (_controlledDrones[i] != null && _controlledDrones[i].Object != null && _controlledDrones[i].Object.IsValid);
+
+            // Czy cooldown spawnu trwa?
+            bool isSpawnCooldown = !SpawnTimers[i].ExpiredOrNotRunning(Runner);
+
             if (droneSlots != null && i < droneSlots.Length)
             {
-                droneSlots[i].SetSpawnInteractable(!hasDrone);
-                // opcjonalnie zaktualizuj HP w UI jeœli masz dostêp do CurrentHP (tu prosty placeholder)
+                var slotUI = droneSlots[i];
+
+                // Przycisk "Spawn" aktywny tylko gdy: NIE MA drona ORAZ NIE MA cooldownu
+                slotUI.SetSpawnInteractable(!hasDrone && !isSpawnCooldown);
+
+                // Aktualizacja paska HP
                 if (hasDrone)
                 {
-                    // Pobieramy % ¿ycia z drona (0.0 do 1.0)
                     float healthPct = _controlledDrones[i].GetHealthPercentage();
-
-                    // Ustawiamy pasek w UI
-                    droneSlots[i].SetHPFill(healthPct);
+                    slotUI.SetHPFill(healthPct);
                 }
                 else
                 {
-                    // Jeœli drona nie ma, pasek na 0
-                    droneSlots[i].SetHPFill(0f);
+                    slotUI.SetHPFill(0f);
+                }
+
+                // Aktualizacja overlayu Cooldownu Spawnu
+                if (isSpawnCooldown)
+                {
+                    // Obliczamy ile % czasu zosta³o (1.0 -> 0.0)
+                    float remaining = SpawnTimers[i].RemainingTime(Runner) ?? 0f;
+                    float progress = Mathf.Clamp01(remaining / spawnCooldownTime);
+                    slotUI.SetSpawnCooldown(progress);
+                }
+                else
+                {
+                    slotUI.SetSpawnCooldown(0f); // Ukryj overlay
                 }
             }
         }
 
+        // Logika przycisków akcji (Move, Bomb) dla wybranego slotu
         bool selectedHasDrone = (_selectedSlot >= 0 && _selectedSlot < _controlledDrones.Length)
             && (_controlledDrones[_selectedSlot] != null && _controlledDrones[_selectedSlot].Object != null && _controlledDrones[_selectedSlot].Object.IsValid);
 
         if (moveDroneButton) moveDroneButton.interactable = selectedHasDrone;
-        if (dropBombButton) dropBombButton.interactable = selectedHasDrone && _controlledDrones[_selectedSlot].IsBombReady;
+
+        // Cooldown bomby i przycisk bomby
+        if (selectedHasDrone)
+        {
+            var activeDrone = _controlledDrones[_selectedSlot];
+            if (dropBombButton) dropBombButton.interactable = activeDrone.IsBombReady;
+            if (bombCooldownImage != null) bombCooldownImage.fillAmount = activeDrone.GetBombCooldownProgress();
+        }
+        else
+        {
+            if (dropBombButton) dropBombButton.interactable = false;
+            if (bombCooldownImage != null) bombCooldownImage.fillAmount = 1f;
+        }
 
         UpdateSlotVisuals();
     }
@@ -202,14 +262,6 @@ public class OperatorController : NetworkBehaviour
         }
     }
 
-    // --- INPUT SIECIOWY ---
-    public override void FixedUpdateNetwork()
-    {
-        if (GetInput(out NetworkInputData data))
-        {
-            _cameraInput = data.camera;
-        }
-    }
 
     // --- PE£NA LOGIKA RUCHU KAMERY (TWÓJ ORYGINALNY KOD) ---
     void LateUpdate()
@@ -302,26 +354,33 @@ public class OperatorController : NetworkBehaviour
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_RequestSpawnDrone(int slot, RpcInfo info = default)
     {
-        // Sprawdzenie czy slot ju¿ ma drona
-        if (slot < 0 || slot >= _controlledDrones.Length) return;
+        if (slot < 0 || slot >= 3) return;
 
+        // 1. ZABEZPIECZENIE: Jeœli timer cooldownu jeszcze leci -> odrzuæ proœbê
+        if (!SpawnTimers[slot].ExpiredOrNotRunning(Runner))
+        {
+            return;
+        }
+
+        // Sprawdzenie czy slot ju¿ ma drona
         if (_controlledDrones[slot] != null && _controlledDrones[slot].Object != null && _controlledDrones[slot].Object.IsValid)
             return;
 
         if (droneSpawnPoint == null)
         {
-            Debug.LogError("OperatorController: Nie znaleziono DroneSpawnPoint (SprawdŸ Tag 'DroneBase')");
+            Debug.LogError("OperatorController: Nie znaleziono DroneSpawnPoint");
             return;
         }
 
-        // Spawn drona (na serwerze)
+        // Spawn drona
         NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
         DroneController droneScript = droneObj.GetComponent<DroneController>();
 
-        // zapisujemy drona serwer-side w odpowiednim slocie
         _controlledDrones[slot] = droneScript;
 
-        // wysy³amy informacjê do klienta (InputAuthority) aby zapisa³ referencjê lokalnie
+        // Oznaczamy ¿e slot jest zajêty (dla logiki wykrywania œmierci)
+        _wasSlotOccupied[slot] = true;
+
         RPC_SetLocalDroneRef(droneScript, slot);
 
         int matIndex = Mathf.Clamp(slot, 0, (droneMaterials != null ? droneMaterials.Length - 1 : 0));

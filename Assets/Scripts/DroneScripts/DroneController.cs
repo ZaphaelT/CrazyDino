@@ -119,4 +119,14 @@ public class DroneController : NetworkBehaviour, IDamageable
             }
         }
     }
+
+    public float GetBombCooldownProgress()
+    {
+        if (BombCooldown.ExpiredOrNotRunning(Runner))
+            return 0f;
+
+        float remaining = BombCooldown.RemainingTime(Runner) ?? 0f;
+
+        return Mathf.Clamp01(remaining / cooldownTime);
+    }
 }
