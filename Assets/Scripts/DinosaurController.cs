@@ -17,7 +17,12 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     private Animator _animator;
 
     [SerializeField] private Camera playerCamera;
-    [SerializeField] private GameObject uiCanvasRoot;
+    public GameObject uiCanvasRoot;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource _audioSource; 
+    [SerializeField] private AudioClip attackSound;    
+    [SerializeField] private AudioClip takeDamageSound; 
 
     private bool _isLocal;
     private bool _cameraDetached;
@@ -39,15 +44,15 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     [SerializeField] private int _hp = 10;
     [SerializeField] private float _speed;
 
-    private float deadzone = 0.08f; // Dodaj pole
-
-    private Vector3 _smoothedVelocity = Vector3.zero;
-    private float smoothSpeed = 8f; // Mo¿esz ustawiæ przez [SerializeField]
+    private float deadzone = 0.08f;
+    private float smoothSpeed = 8f;
 
     public override void Spawned()
     {
         _cc = GetComponent<NetworkCharacterController>();
         _animator = GetComponent<Animator>();
+
+        if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
 
         if (Object.HasStateAuthority)
         {
@@ -119,7 +124,7 @@ public class DinosaurController : NetworkBehaviour, IDamageable
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.K))
+        if (Input.GetKeyDown(KeyCode.K))
         {
             TakeDamage(15);
         }
@@ -201,6 +206,8 @@ public class DinosaurController : NetworkBehaviour, IDamageable
             CurrentHealth -= damage;
             if (CurrentHealth < 0) CurrentHealth = 0;
 
+            RPC_PlayTakeDamageSound();
+
             if (CurrentHealth == 0)
             {
                 if (Object.HasInputAuthority && GameEndScreenController.Instance != null)
@@ -220,7 +227,31 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         {
             IsAttacking = true;
             _attackTimer = 0f;
+
             PerformAttack();
+
+            RPC_PlayAttackSound();
+        }
+    }
+
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayAttackSound()
+    {
+        if (_audioSource != null && attackSound != null)
+        {
+            _audioSource.pitch = Random.Range(0.9f, 1.1f); 
+            _audioSource.PlayOneShot(attackSound);
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayTakeDamageSound()
+    {
+        if (_audioSource != null && takeDamageSound != null)
+        {
+            _audioSource.pitch = Random.Range(0.9f, 1.1f);
+            _audioSource.PlayOneShot(takeDamageSound);
         }
     }
 
@@ -230,12 +261,14 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         Vector3 center = transform.position + transform.forward * (attackRadius * 0.5f);
         Gizmos.DrawWireSphere(center, attackRadius);
     }
+
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
     public void RPC_ShowWinScreen()
     {
         if (GameEndScreenController.Instance != null)
             GameEndScreenController.Instance.ShowWin();
     }
+
     public void MultiplyStatsOnLevelUp(float multiplier)
     {
         _speed *= multiplier;

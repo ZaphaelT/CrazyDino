@@ -8724,7 +8724,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.468
+  m_Volume: 0.15
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -8821,7 +8821,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   musicSource: {fileID: 805715653}
-  backgroundMusic: {fileID: 8300000, guid: d5e51cd899303fe43be578e86f49a448, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 17f22e9a4d8f01845a7993bc80536320, type: 3}
 --- !u!4 &805715655
 Transform:
   m_ObjectHideFlags: 0

@@ -1,13 +1,12 @@
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI; // Potrzebne do obs≥ugi przyciskÛw
+using UnityEngine.UI;
 
 public class OperatorController : NetworkBehaviour
 {
     public static OperatorController Instance { get; private set; }
 
-    // --- ORYGINALNE USTAWIENIA KAMERY ---
     [Header("Camera")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private float panSpeed = 10f;
@@ -16,15 +15,14 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private float deadzone = 0.08f;
 
     [Header("Movement")]
-    [SerializeField] private bool useCameraRelativeMovement = false; // false = world-space
-    [SerializeField] private float smoothSpeed = 8f;                 // wiÍksza wartoúÊ = szybsze wyg≥adzanie
+    [SerializeField] private bool useCameraRelativeMovement = false;
+    [SerializeField] private float smoothSpeed = 8f;
 
     [Header("Optional bounds (XZ)")]
     [SerializeField] private bool useBounds = false;
     [SerializeField] private Vector2 minXZ = new Vector2(-50, -50);
     [SerializeField] private Vector2 maxXZ = new Vector2(50, 50);
 
-    // --- NOWE USTAWIENIA DRONA I UI ---
     [Header("Drone System")]
     [SerializeField] private NetworkPrefabRef dronePrefab;
     [SerializeField] private Transform droneSpawnPoint;
@@ -36,20 +34,25 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private int materialTargetSlot = 2;
 
     [Header("Mobile UI")]
-    [SerializeField] private GameObject uiCanvasRoot;
-    [SerializeField] private DroneSlotUI[] droneSlots; // trzy sloty ustaw w Inspectorze
+    public GameObject uiCanvasRoot;
+    [SerializeField] private DroneSlotUI[] droneSlots;
     [SerializeField] private Button moveDroneButton;
     [SerializeField] private Button dropBombButton;
-
     [SerializeField] private Image bombCooldownImage;
 
-    // --- ZMIENNE WEWN TRZNE ---
+    // --- NOWE POLA AUDIO ---
+    [Header("Audio")]
+    [SerializeField] private AudioSource uiAudioSource; // èrÛd≥o düwiÍku 2D
+    [SerializeField] private AudioClip buttonClickSound; // DüwiÍk klikniÍcia
+    // -----------------------
+
     private InputSystem_Actions _controls;
     private bool _isLocal;
     private bool _cameraDetached;
     private bool _cameraIsRoot;
     private Transform _cameraTransform;
     private Vector2 _cameraInput = Vector2.zero;
+
     [Networked] public float CurrentHealth { get; set; }
 
     private DroneController[] _controlledDrones = new DroneController[3];
@@ -58,34 +61,33 @@ public class OperatorController : NetworkBehaviour
     private int _selectedSlot = 0;
 
     [SerializeField] private int _hp = 100;
-
     [SerializeField] private bool debugForceLocalInEditor = false;
 
     private void Awake()
     {
         Instance = this;
     }
+
     private void Start()
     {
         CurrentHealth = _hp;
     }
-    
 
     public override void Spawned()
     {
         _isLocal = Object.HasInputAuthority;
 
-        // --- SETUP KAMERY (Oryginalny + poprawki) ---
+        // Automatyczne pobranie AudioSource
+        if (uiAudioSource == null) uiAudioSource = GetComponent<AudioSource>();
+
         if (playerCamera == null)
             playerCamera = GetComponentInChildren<Camera>(true);
 
-        if (playerCamera == null)
-            return;
+        if (playerCamera == null) return;
 
         _cameraTransform = playerCamera.transform;
         _cameraIsRoot = (playerCamera.gameObject == this.gameObject);
 
-        // Konfiguracja dla lokalnego gracza (Operatora)
         if (_isLocal || (debugForceLocalInEditor && Application.isEditor))
         {
             if (!_cameraIsRoot)
@@ -105,10 +107,8 @@ public class OperatorController : NetworkBehaviour
             if (playerCamera.TryGetComponent<AudioListener>(out var audio))
                 audio.enabled = true;
 
-            // W≥πczamy UI
             if (uiCanvasRoot != null) uiCanvasRoot.SetActive(true);
 
-            // Podpinamy sloty UI (jeúli sπ)
             if (droneSlots != null && droneSlots.Length > 0)
             {
                 for (int i = 0; i < droneSlots.Length; i++)
@@ -118,31 +118,20 @@ public class OperatorController : NetworkBehaviour
                     slot.OnSelected += OnSlotSelected;
                     slot.OnSpawnRequested += OnSlotSpawnRequested;
                 }
-
-                // ustaw domyúlne zaznaczenie
                 _selectedSlot = Mathf.Clamp(_selectedSlot, 0, droneSlots.Length - 1);
                 UpdateSlotVisuals();
-            }
-            else
-            {
-                Debug.LogWarning("OperatorController: droneSlots nie ustawione w Inspectorze.");
             }
         }
         else
         {
-            // Wy≥πczamy wszystko dla innych graczy
             playerCamera.gameObject.SetActive(false);
             if (uiCanvasRoot != null) uiCanvasRoot.SetActive(false);
         }
 
-        // --- SZUKANIE BAZY DRONA (FIX DLA PREFABU) ---
         if (droneSpawnPoint == null)
         {
             var found = GameObject.FindGameObjectWithTag("DroneBase");
-            if (found != null)
-            {
-                droneSpawnPoint = found.transform;
-            }
+            if (found != null) droneSpawnPoint = found.transform;
         }
     }
 
@@ -172,40 +161,29 @@ public class OperatorController : NetworkBehaviour
 
     private void OnEnable()
     {
-        if (_controls == null)
-            _controls = new InputSystem_Actions();
-
+        if (_controls == null) _controls = new InputSystem_Actions();
         _controls.Player.Enable();
     }
 
     private void OnDisable()
     {
-        if (_controls != null)
-            _controls.Player.Disable();
+        if (_controls != null) _controls.Player.Disable();
     }
 
-    // --- ZARZ•DZANIE STANEM UI ---
     void Update()
     {
         if (!_isLocal) return;
 
-        // Aktualizacja UI (Sloty, HP, Cooldowny)
         for (int i = 0; i < 3; i++)
         {
-            // Czy w slocie jest dron?
             bool hasDrone = (_controlledDrones[i] != null && _controlledDrones[i].Object != null && _controlledDrones[i].Object.IsValid);
-
-            // Czy cooldown spawnu trwa?
             bool isSpawnCooldown = !SpawnTimers[i].ExpiredOrNotRunning(Runner);
 
             if (droneSlots != null && i < droneSlots.Length)
             {
                 var slotUI = droneSlots[i];
-
-                // Przycisk "Spawn" aktywny tylko gdy: NIE MA drona ORAZ NIE MA cooldownu
                 slotUI.SetSpawnInteractable(!hasDrone && !isSpawnCooldown);
 
-                // Aktualizacja paska HP
                 if (hasDrone)
                 {
                     float healthPct = _controlledDrones[i].GetHealthPercentage();
@@ -216,28 +194,24 @@ public class OperatorController : NetworkBehaviour
                     slotUI.SetHPFill(0f);
                 }
 
-                // Aktualizacja overlayu Cooldownu Spawnu
                 if (isSpawnCooldown)
                 {
-                    // Obliczamy ile % czasu zosta≥o (1.0 -> 0.0)
                     float remaining = SpawnTimers[i].RemainingTime(Runner) ?? 0f;
                     float progress = Mathf.Clamp01(remaining / spawnCooldownTime);
                     slotUI.SetSpawnCooldown(progress);
                 }
                 else
                 {
-                    slotUI.SetSpawnCooldown(0f); // Ukryj overlay
+                    slotUI.SetSpawnCooldown(0f);
                 }
             }
         }
 
-        // Logika przyciskÛw akcji (Move, Bomb) dla wybranego slotu
         bool selectedHasDrone = (_selectedSlot >= 0 && _selectedSlot < _controlledDrones.Length)
             && (_controlledDrones[_selectedSlot] != null && _controlledDrones[_selectedSlot].Object != null && _controlledDrones[_selectedSlot].Object.IsValid);
 
         if (moveDroneButton) moveDroneButton.interactable = selectedHasDrone;
 
-        // Cooldown bomby i przycisk bomby
         if (selectedHasDrone)
         {
             var activeDrone = _controlledDrones[_selectedSlot];
@@ -262,13 +236,10 @@ public class OperatorController : NetworkBehaviour
         }
     }
 
-
-    // --- PE£NA LOGIKA RUCHU KAMERY (TW”J ORYGINALNY KOD) ---
     void LateUpdate()
     {
         bool localControl = Object.HasInputAuthority || (debugForceLocalInEditor && Application.isEditor);
-        if (!localControl || playerCamera == null)
-            return;
+        if (!localControl || playerCamera == null) return;
 
         Transform camT = _cameraTransform != null ? _cameraTransform : playerCamera.transform;
         Vector2 stick = _cameraInput;
@@ -286,22 +257,16 @@ public class OperatorController : NetworkBehaviour
             }
             else
             {
-                // world-space movement (X,Z)
                 move = new Vector3(stick.x, 0f, stick.y);
             }
 
-            // oblicz prÍdkoúÊ (jednostki na sekundÍ)
             Vector3 velocity = move * panSpeed;
-
-            // docelowa pozycja w tym kroku
             Vector3 stepTarget = camT.position + velocity * Time.deltaTime;
             stepTarget.y = camT.position.y;
 
-            // stabilne wyg≥adzanie niezaleøne od FPS
             float alpha = 1f - Mathf.Exp(-smoothSpeed * Time.deltaTime);
             camT.position = Vector3.Lerp(camT.position, stepTarget, alpha);
 
-            // przyciÍcie pozycji (bounds)
             if (useBounds)
             {
                 camT.position = new Vector3(
@@ -312,13 +277,9 @@ public class OperatorController : NetworkBehaviour
             }
         }
 
-        // Utrzymuj sta≥y pitch i bieøπcy yaw
         float yaw = camT.rotation.eulerAngles.y;
         camT.rotation = Quaternion.Euler(initialPitch, yaw, 0f);
     }
-
-    // --- OBS£UGA UI (KLIKNI CIA) ---
-    // Sloty wywo≥ujπ te metody przez eventy
 
     private void OnSlotSelected(int slot)
     {
@@ -334,6 +295,9 @@ public class OperatorController : NetworkBehaviour
     public void OnMoveButtonClicked()
     {
         if (!_isLocal) return;
+
+        PlayUISound();
+
         if (playerCamera == null) return;
 
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
@@ -346,39 +310,31 @@ public class OperatorController : NetworkBehaviour
     public void OnBombButtonClicked()
     {
         if (!_isLocal) return;
+
+
         RPC_OrderDropBomb(_selectedSlot);
     }
 
-    // --- LOGIKA SIECIOWA (RPCS) ---
+    private void PlayUISound()
+    {
+        if (uiAudioSource != null && buttonClickSound != null)
+        {
+            uiAudioSource.PlayOneShot(buttonClickSound);
+        }
+    }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_RequestSpawnDrone(int slot, RpcInfo info = default)
     {
         if (slot < 0 || slot >= 3) return;
+        if (!SpawnTimers[slot].ExpiredOrNotRunning(Runner)) return;
+        if (_controlledDrones[slot] != null && _controlledDrones[slot].Object != null && _controlledDrones[slot].Object.IsValid) return;
+        if (droneSpawnPoint == null) return;
 
-        // 1. ZABEZPIECZENIE: Jeúli timer cooldownu jeszcze leci -> odrzuÊ proúbÍ
-        if (!SpawnTimers[slot].ExpiredOrNotRunning(Runner))
-        {
-            return;
-        }
-
-        // Sprawdzenie czy slot juø ma drona
-        if (_controlledDrones[slot] != null && _controlledDrones[slot].Object != null && _controlledDrones[slot].Object.IsValid)
-            return;
-
-        if (droneSpawnPoint == null)
-        {
-            Debug.LogError("OperatorController: Nie znaleziono DroneSpawnPoint");
-            return;
-        }
-
-        // Spawn drona
         NetworkObject droneObj = Runner.Spawn(dronePrefab, droneSpawnPoint.position, Quaternion.identity, info.Source);
         DroneController droneScript = droneObj.GetComponent<DroneController>();
 
         _controlledDrones[slot] = droneScript;
-
-        // Oznaczamy øe slot jest zajÍty (dla logiki wykrywania úmierci)
         _wasSlotOccupied[slot] = true;
 
         RPC_SetLocalDroneRef(droneScript, slot);
@@ -398,20 +354,14 @@ public class OperatorController : NetworkBehaviour
     private void RPC_OrderMove(int slot, Vector3 target)
     {
         if (slot < 0 || slot >= _controlledDrones.Length) return;
-        if (_controlledDrones[slot] != null)
-        {
-            _controlledDrones[slot].Server_MoveTo(target);
-        }
+        if (_controlledDrones[slot] != null) _controlledDrones[slot].Server_MoveTo(target);
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_OrderDropBomb(int slot)
     {
         if (slot < 0 || slot >= _controlledDrones.Length) return;
-        if (_controlledDrones[slot] != null)
-        {
-            _controlledDrones[slot].Server_DropBomb();
-        }
+        if (_controlledDrones[slot] != null) _controlledDrones[slot].Server_DropBomb();
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -419,33 +369,16 @@ public class OperatorController : NetworkBehaviour
     {
         if (drone == null) return;
         if (droneMaterials == null || droneMaterials.Length == 0) return;
-
         int matIdx = Mathf.Clamp(materialIndex, 0, droneMaterials.Length - 1);
-        Material matToAssign = droneMaterials[matIdx];
-        if (matToAssign == null) return;
-
-        int targetSlot = Mathf.Max(0, materialTargetSlot);
-
-        // Uøyjemy metody na DroneController, øeby nie odwo≥ywaÊ siÍ do prywatnych pÛl z zewnπtrz
-        drone.ApplyMaterialToVisual(matToAssign, targetSlot);
+        drone.ApplyMaterialToVisual(droneMaterials[matIdx], Mathf.Max(0, materialTargetSlot));
     }
 
     void OnDestroy()
     {
-        if (playerCamera == null)
-            return;
+        if (playerCamera == null) return;
+        if (_cameraDetached) Destroy(playerCamera.gameObject);
+        else if (playerCamera.TryGetComponent<AudioListener>(out var audio)) audio.enabled = false;
 
-        if (_cameraDetached)
-        {
-            Destroy(playerCamera.gameObject);
-        }
-        else
-        {
-            if (playerCamera.TryGetComponent<AudioListener>(out var audio))
-                audio.enabled = false;
-        }
-
-        // odwiπø eventy UI
         if (droneSlots != null)
         {
             for (int i = 0; i < droneSlots.Length; i++)
@@ -458,12 +391,17 @@ public class OperatorController : NetworkBehaviour
                 }
             }
         }
+
+        if (Instance == this) Instance = null;
     }
+
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
     public void RPC_ShowWinScreen()
     {
         if (GameEndScreenController.Instance != null)
             GameEndScreenController.Instance.ShowWin();
+        if (uiCanvasRoot != null)
+            uiCanvasRoot.SetActive(false);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
@@ -471,18 +409,17 @@ public class OperatorController : NetworkBehaviour
     {
         if (GameEndScreenController.Instance != null)
             GameEndScreenController.Instance.ShowLose();
+        if (uiCanvasRoot != null)
+            uiCanvasRoot.SetActive(false);
     }
-
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
         if (!useBounds) return;
-
         Gizmos.color = Color.cyan;
         Vector3 center = new Vector3((minXZ.x + maxXZ.x) * 0.5f, cameraHeight, (minXZ.y + maxXZ.y) * 0.5f);
         Vector3 size = new Vector3(Mathf.Abs(maxXZ.x - minXZ.x), 0.1f, Mathf.Abs(maxXZ.y - minXZ.y));
-
         Gizmos.DrawWireCube(center, size);
     }
 #endif

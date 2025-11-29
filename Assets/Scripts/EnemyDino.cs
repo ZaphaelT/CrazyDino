@@ -8,6 +8,10 @@ public class EnemyDino : NetworkBehaviour, IDamageable
     [SerializeField] protected NavMeshAgent _agent;
     [SerializeField] private BoxCollider _collider;
 
+    [Header("Audio")]
+    public AudioSource _audioSource; 
+    [SerializeField] private AudioClip takeDamageSound;       
+
     [Networked] public bool IsDead { get; set; }
     [Networked] protected int Hp { get; set; }
 
@@ -21,6 +25,8 @@ public class EnemyDino : NetworkBehaviour, IDamageable
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
         if (_collider == null) _collider = GetComponent<BoxCollider>();
+
+        if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
 
         _lastDeadState = IsDead;
 
@@ -51,7 +57,6 @@ public class EnemyDino : NetworkBehaviour, IDamageable
             else
             {
                 SetVisualsActive(true);
-                if (_agent != null) _agent.enabled = true;
                 if (_collider != null) _collider.enabled = true;
                 if (_animator != null)
                 {
@@ -71,8 +76,8 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         if (_agent != null)
         {
-            _agent.enabled = true; 
-            _agent.Warp(position); 
+            _agent.enabled = true;
+            _agent.Warp(position);
 
             if (_agent.isOnNavMesh)
             {
@@ -88,7 +93,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         if (_collider != null) _collider.enabled = true;
 
-        IsDead = false; 
+        IsDead = false;
 
         SetVisualsActive(true);
         if (_animator != null)
@@ -122,10 +127,13 @@ public class EnemyDino : NetworkBehaviour, IDamageable
             Hp = 0;
             IsDead = true;
             GrantExpToKiller();
+
+    
+            RPC_PlayTakeDamage(true);
         }
         else
         {
-            RPC_PlayTakeDamage();
+            RPC_PlayTakeDamage(false);
         }
     }
 
@@ -136,9 +144,16 @@ public class EnemyDino : NetworkBehaviour, IDamageable
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_PlayTakeDamage()
+    private void RPC_PlayTakeDamage(bool isDying)
     {
-        if (_animator != null && _animator.gameObject.activeInHierarchy)
+
+        if (!isDying && _animator != null && _animator.gameObject.activeInHierarchy)
             _animator.SetTrigger("TakeDamage");
+
+        if (_audioSource != null && takeDamageSound != null)
+        {
+            _audioSource.pitch = Random.Range(0.9f, 1.1f);
+            _audioSource.PlayOneShot(takeDamageSound);
+        }
     }
 }
