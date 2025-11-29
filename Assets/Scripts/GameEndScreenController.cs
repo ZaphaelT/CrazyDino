@@ -15,6 +15,8 @@ public class GameEndScreenController : MonoBehaviour
 
     public void ShowWin()
     {
+        AudioListener.volume = 0f;
+
         if (winScreen != null) winScreen.SetActive(true);
         if (loseScreen != null) loseScreen.SetActive(false);
     }
