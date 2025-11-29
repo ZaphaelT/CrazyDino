@@ -21,8 +21,8 @@ public class GameEndScreenController : MonoBehaviour
 
     public void ShowLose()
     {
-        
-       DinosaurController.Instance.uiCanvasRoot.SetActive(false);
+        AudioListener.volume = 0f;
+        DinosaurController.Instance.uiCanvasRoot.SetActive(false);
        OperatorController.Instance.uiCanvasRoot.SetActive(false);
         
 
