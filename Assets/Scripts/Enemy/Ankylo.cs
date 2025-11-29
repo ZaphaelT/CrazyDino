@@ -8,8 +8,12 @@ public class Ankylo : EnemyDino
     [SerializeField] private float attackRange = 2.5f;
     [SerializeField] private float attackCooldown = 3.0f;
     [SerializeField] private int attackDamage = 15;
-
     [SerializeField] private float damageDelay = 0.5f;
+
+    // --- NOWE POLA AUDIO ---
+    [Header("Audio 3D")]
+    [SerializeField] private AudioClip attackSound;    // DüwiÍk ataku
+    // -----------------------
 
     [Header("Agro")]
     [SerializeField] private float detectionRange = 15.0f;
@@ -19,12 +23,12 @@ public class Ankylo : EnemyDino
     [SerializeField] private bool autoStartPatrol = true;
 
     // Zmienne wewnÍtrzne
-    private float _attackCooldownTimer = 0f; 
+    private float _attackCooldownTimer = 0f;
     private int _currentPatrolIndex = 0;
     private Transform _playerTransform;
 
     private TickTimer _damageDelayTimer;
-    private bool _isDamagePending = false; 
+    private bool _isDamagePending = false;
 
     [Networked] private bool IsWalking { get; set; }
     [Networked] private Vector3 NetworkedPosition { get; set; }
@@ -34,10 +38,15 @@ public class Ankylo : EnemyDino
     {
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
+
+        // Automatyczne pobranie AudioSource
+        if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
     }
 
     public override void Spawned()
     {
+        base.Spawned(); // WAØNE: Wywo≥aj bazÍ, øeby obs≥uøyÊ chowanie cia≥a przy spawnie!
+
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
 
@@ -51,9 +60,12 @@ public class Ankylo : EnemyDino
 
             if (autoStartPatrol && patrolPoints != null && patrolPoints.Length > 0)
             {
-                _agent.isStopped = false;
-                _agent.SetDestination(patrolPoints[0].position);
-                IsWalking = true;
+                if (_agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh)
+                {
+                    _agent.isStopped = false;
+                    _agent.SetDestination(patrolPoints[0].position);
+                    IsWalking = true;
+                }
             }
         }
     }
@@ -61,16 +73,14 @@ public class Ankylo : EnemyDino
     public override void FixedUpdateNetwork()
     {
         if (!Object.HasStateAuthority) return;
-
-                if (IsDead) return;
-
+        if (IsDead) return;
 
         if (_isDamagePending)
         {
             if (_damageDelayTimer.Expired(Runner))
             {
-                DealDelayedDamage(); 
-                _isDamagePending = false; 
+                DealDelayedDamage();
+                _isDamagePending = false;
             }
         }
 
@@ -83,9 +93,7 @@ public class Ankylo : EnemyDino
     void Update()
     {
         if (!Object || !Object.IsValid) return;
-
         if (IsDead) return;
-
 
         if (_playerTransform == null && DinosaurController.Instance != null)
             _playerTransform = DinosaurController.Instance.transform;
@@ -101,9 +109,12 @@ public class Ankylo : EnemyDino
                 distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
             }
 
+            // Sprawdzenie bezpieczeÒstwa Agenta
+            bool isAgentReady = _agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh;
+
             if (distanceToPlayer <= attackRange)
             {
-                if (_agent != null) _agent.isStopped = true;
+                if (isAgentReady) _agent.isStopped = true;
                 IsWalking = false;
 
                 RotateTowards(_playerTransform.position);
@@ -113,19 +124,18 @@ public class Ankylo : EnemyDino
                     StartAttackSequence();
                 }
             }
-
             else if (distanceToPlayer <= detectionRange && !_isDamagePending)
             {
-                if (_agent != null)
+                if (isAgentReady)
                 {
                     _agent.isStopped = false;
                     _agent.SetDestination(_playerTransform.position);
                 }
                 IsWalking = true;
             }
-            else if (!_isDamagePending) 
+            else if (!_isDamagePending)
             {
-                HandlePatrol();
+                HandlePatrol(isAgentReady);
             }
         }
         else
@@ -137,18 +147,18 @@ public class Ankylo : EnemyDino
 
     private void StartAttackSequence()
     {
-        _attackCooldownTimer = 0f; 
+        _attackCooldownTimer = 0f;
 
         _damageDelayTimer = TickTimer.CreateFromSeconds(Runner, damageDelay);
         _isDamagePending = true;
 
+        // To wywo≥a animacjÍ I DèWI K u wszystkich
         RPC_PlayAttackAnimation();
     }
 
     private void DealDelayedDamage()
     {
         if (_playerTransform == null) return;
-
         if (_playerTransform.gameObject == gameObject) return;
 
         var dmg = _playerTransform.GetComponent<IDamageable>();
@@ -162,11 +172,20 @@ public class Ankylo : EnemyDino
     private void RPC_PlayAttackAnimation()
     {
         if (_animator != null) _animator.SetTrigger("Attack");
+
+        // --- DèWI K ATAKU ---
+        if (_audioSource != null && attackSound != null)
+        {
+            // Losowa zmiana tonu dla realizmu
+            _audioSource.pitch = Random.Range(0.9f, 1.1f);
+            _audioSource.PlayOneShot(attackSound);
+        }
+        // --------------------
     }
 
-    private void HandlePatrol()
+    private void HandlePatrol(bool isAgentReady)
     {
-        if (_agent == null || patrolPoints == null || patrolPoints.Length == 0) return;
+        if (!isAgentReady || patrolPoints == null || patrolPoints.Length == 0) return;
 
         if (_agent.isStopped) _agent.isStopped = false;
 

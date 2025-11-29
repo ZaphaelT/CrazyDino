@@ -8,6 +8,12 @@ public class EnemyDino : NetworkBehaviour, IDamageable
     [SerializeField] protected NavMeshAgent _agent;
     [SerializeField] private BoxCollider _collider;
 
+    // --- NOWE POLA AUDIO ---
+    [Header("Audio")]
+    public AudioSource _audioSource; // Komponent AudioSource (3D)
+    [SerializeField] private AudioClip takeDamageSound;       // DŸwiêk otrzymania obra¿eñ
+    // -----------------------
+
     [Networked] public bool IsDead { get; set; }
     [Networked] protected int Hp { get; set; }
 
@@ -21,6 +27,9 @@ public class EnemyDino : NetworkBehaviour, IDamageable
         _animator = GetComponent<Animator>();
         _agent = GetComponent<NavMeshAgent>();
         if (_collider == null) _collider = GetComponent<BoxCollider>();
+
+        // Automatyczne pobranie AudioSource, jeœli zapomnia³eœ przypisaæ
+        if (_audioSource == null) _audioSource = GetComponent<AudioSource>();
 
         _lastDeadState = IsDead;
 
@@ -51,7 +60,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
             else
             {
                 SetVisualsActive(true);
-                if (_agent != null) _agent.enabled = true;
+                // Respawn logikê obs³uguje metoda Respawn(), tutaj tylko wizualne w³¹czenie
                 if (_collider != null) _collider.enabled = true;
                 if (_animator != null)
                 {
@@ -71,8 +80,8 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         if (_agent != null)
         {
-            _agent.enabled = true; 
-            _agent.Warp(position); 
+            _agent.enabled = true;
+            _agent.Warp(position);
 
             if (_agent.isOnNavMesh)
             {
@@ -88,7 +97,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
 
         if (_collider != null) _collider.enabled = true;
 
-        IsDead = false; 
+        IsDead = false;
 
         SetVisualsActive(true);
         if (_animator != null)
@@ -125,6 +134,7 @@ public class EnemyDino : NetworkBehaviour, IDamageable
         }
         else
         {
+            // Jeœli ¿yje, ale oberwa³ -> odegraj animacjê i dŸwiêk
             RPC_PlayTakeDamage();
         }
     }
@@ -138,7 +148,16 @@ public class EnemyDino : NetworkBehaviour, IDamageable
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_PlayTakeDamage()
     {
+        // 1. Animacja
         if (_animator != null && _animator.gameObject.activeInHierarchy)
             _animator.SetTrigger("TakeDamage");
+
+        // 2. DŸwiêk (NOWE)
+        if (_audioSource != null && takeDamageSound != null)
+        {
+            // Losowa zmiana tonacji, ¿eby ka¿de uderzenie brzmia³o nieco inaczej
+            _audioSource.pitch = Random.Range(0.9f, 1.1f);
+            _audioSource.PlayOneShot(takeDamageSound);
+        }
     }
 }
