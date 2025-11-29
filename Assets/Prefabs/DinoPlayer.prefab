@@ -19007,6 +19007,8 @@ MonoBehaviour:
   statsMultiplier: 1.5
   expFillImage: {fileID: 4812954967709559239}
   levelText: {fileID: 1854168143528181067}
+  audioSource: {fileID: 8977666434908570880}
+  levelUpSound: {fileID: 8300000, guid: 0dc474366d1859b449508c90523787fd, type: 3}
 --- !u!114 &2942507375099819080
 MonoBehaviour:
   m_ObjectHideFlags: 0
