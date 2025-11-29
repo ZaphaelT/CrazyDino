@@ -20,9 +20,9 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     public GameObject uiCanvasRoot;
 
     [Header("Audio")]
-    [SerializeField] private AudioSource _audioSource; 
-    [SerializeField] private AudioClip attackSound;    
-    [SerializeField] private AudioClip takeDamageSound; 
+    [SerializeField] private AudioSource _audioSource;
+    [SerializeField] private AudioClip attackSound;
+    [SerializeField] private AudioClip takeDamageSound;
 
     private bool _isLocal;
     private bool _cameraDetached;
@@ -45,7 +45,9 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     [SerializeField] private float _speed;
 
     private float deadzone = 0.08f;
-    private float smoothSpeed = 8f;
+
+    // Zwiêkszy³em nieco smoothSpeed dla kamery, aby nie zostawa³a za bardzo w tyle
+    private float smoothSpeed = 10f;
 
     public override void Spawned()
     {
@@ -91,7 +93,12 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         if (_isLocal)
         {
             DinoAttackButton.LocalDino = this;
-            if (uiCanvasRoot != null) uiCanvasRoot.SetActive(true);
+            if (uiCanvasRoot != null)
+            {
+                // <--- POPRAWKA 1: Od³¹czamy Canvas od gracza, aby UI nie "dr¿a³o" razem z nim
+                uiCanvasRoot.transform.SetParent(null);
+                uiCanvasRoot.SetActive(true);
+            }
         }
         else
         {
@@ -111,7 +118,11 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     {
         if (_isLocal && playerCamera != null)
         {
-            playerCamera.transform.position = transform.position + _cameraOffset;
+            // <--- POPRAWKA 2: P³ynne pod¹¿anie kamery (Lerp) zamiast sztywnego przypisania
+            // To ukrywa mikro-drgania pozycji gracza
+            Vector3 targetPosition = transform.position + _cameraOffset;
+            playerCamera.transform.position = Vector3.Lerp(playerCamera.transform.position, targetPosition, Time.deltaTime * smoothSpeed);
+
             playerCamera.transform.rotation = _cameraRotationOnDetach;
         }
 
@@ -135,6 +146,10 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         if (_cameraDetached && playerCamera != null)
             Destroy(playerCamera.gameObject);
 
+        // Sprz¹tamy te¿ UI, jeœli zosta³o od³¹czone
+        if (_isLocal && uiCanvasRoot != null)
+            Destroy(uiCanvasRoot);
+
         if (_isLocal && DinoAttackButton.LocalDino == this)
             DinoAttackButton.LocalDino = null;
     }
@@ -150,10 +165,16 @@ public class DinosaurController : NetworkBehaviour, IDamageable
         if (GetInput(out NetworkInputData data))
         {
             var inputDir = new Vector2(data.direction.x, data.direction.z);
+
+            // Sprawdzamy czy wychylenie przekracza deadzone
             if (inputDir.sqrMagnitude > deadzone * deadzone)
             {
-                var dirNormalized = inputDir.normalized;
-                desiredVelocity = new Vector3(dirNormalized.x, 0, dirNormalized.y) * _speed;
+                // <--- POPRAWKA 3: Ruch Analogowy
+                // Zamiast .normalized (które zawsze daje 1), u¿ywamy ClampMagnitude.
+                // Dziêki temu przy lekkim wychyleniu (np. 0.2) prêdkoœæ te¿ bêdzie wynosiæ 20%, a nie 100%.
+                var clampedInput = Vector2.ClampMagnitude(inputDir, 1f);
+
+                desiredVelocity = new Vector3(clampedInput.x, 0, clampedInput.y) * _speed;
                 isRunning = true;
             }
         }
@@ -240,7 +261,7 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     {
         if (_audioSource != null && attackSound != null)
         {
-            _audioSource.pitch = Random.Range(0.9f, 1.1f); 
+            _audioSource.pitch = Random.Range(0.9f, 1.1f);
             _audioSource.PlayOneShot(attackSound);
         }
     }
