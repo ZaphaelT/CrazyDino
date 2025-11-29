@@ -35,7 +35,7 @@ public class OperatorController : NetworkBehaviour
     [SerializeField] private int materialTargetSlot = 2;
 
     [Header("Mobile UI")]
-    [SerializeField] private GameObject uiCanvasRoot;
+    public GameObject uiCanvasRoot;
     [SerializeField] private DroneSlotUI[] droneSlots; // trzy sloty ustaw w Inspectorze
     [SerializeField] private Button moveDroneButton;
     [SerializeField] private Button dropBombButton;

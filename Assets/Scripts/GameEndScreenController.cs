@@ -21,6 +21,11 @@ public class GameEndScreenController : MonoBehaviour
 
     public void ShowLose()
     {
+        
+       DinosaurController.Instance.uiCanvasRoot.SetActive(false);
+       OperatorController.Instance.uiCanvasRoot.SetActive(false);
+        
+
         if (loseScreen != null) loseScreen.SetActive(true);
         if (winScreen != null) winScreen.SetActive(false);
     }

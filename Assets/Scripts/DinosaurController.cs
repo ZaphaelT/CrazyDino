@@ -17,7 +17,7 @@ public class DinosaurController : NetworkBehaviour, IDamageable
     private Animator _animator;
 
     [SerializeField] private Camera playerCamera;
-    [SerializeField] private GameObject uiCanvasRoot;
+    public GameObject uiCanvasRoot;
 
     private bool _isLocal;
     private bool _cameraDetached;
