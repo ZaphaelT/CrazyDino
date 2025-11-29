@@ -1366,11 +1366,11 @@ MonoBehaviour:
   _audioSource: {fileID: 8468927479886322961}
   takeDamageSound: {fileID: 8300000, guid: 7067462481004074eb1a7b77334c4be8, type: 3}
   _IsDead: 0
-  maxHp: 100
+  maxHp: 350
   expValue: 100
   attackRange: 15
   attackCooldown: 3
-  attackDamage: 20
+  attackDamage: 30
   damageDelay: 0.5
   attackSound: {fileID: 8300000, guid: 46c5935fa853498499b4b1a89b336b0c, type: 3}
   detectionRange: 35

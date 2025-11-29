@@ -13545,6 +13545,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 271758095}
     m_Modifications:
+    - target: {fileID: 435920353411943287, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
+      propertyPath: SortKey
+      value: 3681640649
+      objectReference: {fileID: 0}
     - target: {fileID: 2652212218093459607, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
       propertyPath: m_Name
       value: Turret PL
@@ -16401,7 +16405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfbf44148a9b2054283a44c7aede9106, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 100
+  maxHP: 500
   _CurrentHP: 0
 --- !u!114 &1435718086
 MonoBehaviour:
@@ -16430,6 +16434,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 271758095}
     m_Modifications:
+    - target: {fileID: 435920353411943287, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
+      propertyPath: SortKey
+      value: 3794384328
+      objectReference: {fileID: 0}
     - target: {fileID: 2652212218093459607, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
       propertyPath: m_Name
       value: Turret PS
@@ -17493,6 +17501,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 271758095}
     m_Modifications:
+    - target: {fileID: 435920353411943287, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
+      propertyPath: SortKey
+      value: 2284895931
+      objectReference: {fileID: 0}
     - target: {fileID: 2652212218093459607, guid: 11c22b971e0d33747bb18cda796c3b8b, type: 3}
       propertyPath: m_Name
       value: Turret PP

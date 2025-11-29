@@ -1779,7 +1779,7 @@ MonoBehaviour:
   _audioSource: {fileID: 4577056464271688368}
   takeDamageSound: {fileID: 8300000, guid: 4eb20f6045a841d4f8c36888db1ebdeb, type: 3}
   _IsDead: 0
-  maxHp: 100
+  maxHp: 200
   expValue: 50
   attackRange: 15
   attackCooldown: 3

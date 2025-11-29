@@ -361,7 +361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 058c7459c8507f440ac4dd8b96442f3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 50
+  maxHP: 400
   explosionPrefab: {fileID: 4188875290539969543, guid: bbc057169e128ed48895ec0e5ff7d16c, type: 3}
   range: 60
   rotationSpeed: 50
